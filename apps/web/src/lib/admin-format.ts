@@ -1,69 +1,71 @@
 import { z } from "zod";
-import { MODULE_TYPES, isModuleType, type ModuleType } from "@collabverse/shared";
-import { SUBSCRIPTION_STATUSES, STATUS_LABELS, type SubscriptionStatus } from "@/lib/billing";
+import { isModuleType } from "@collabverse/shared";
+import { SUBSCRIPTION_STATUSES, STATUS_LABELS, formatPrice, type SubscriptionStatus } from "@/lib/billing";
 import { planById } from "@/components/marketing/plans";
 
 /**
- * Row shapes returned by the admin RPCs (supabase/migrations/20261023000009),
+ * Row shapes returned by the admin RPCs (supabase/migrations/20261023000010),
  * validated at the boundary because generated RPC types can't express which
  * output columns are nullable. Shared by server pages and client controls.
  */
 
 const num = z.coerce.number();
-const counts = z
-  .record(z.string(), num)
-  .transform((rec) => Object.fromEntries(MODULE_TYPES.map((m) => [m, rec[m] ?? 0])) as Record<ModuleType, number>);
 
 export const customerRowSchema = z.object({
-  workspace_id: z.string(),
-  name: z.string(),
-  icon: z.string(),
-  color: z.string(),
+  user_id: z.string(),
+  display_name: z.string(),
+  email: z.string(),
   created_at: z.string(),
-  owner_id: z.string(),
-  owner_name: z.string(),
-  owner_email: z.string(),
   plan_id: z.string(),
   plan_name: z.string(),
   status: z.enum(SUBSCRIPTION_STATUSES),
   trial_ends_at: z.string().nullable(),
-  current_period_end: z.string().nullable(),
+  custom_price_cents: num.nullable(),
+  workspace_count: num,
+  max_workspaces: num.nullable(),
   member_count: num,
-  item_count: num,
   total_count: num,
 });
 export type CustomerRow = z.infer<typeof customerRowSchema>;
 
 export const customerDetailSchema = z.object({
-  workspace_id: z.string(),
-  name: z.string(),
-  description: z.string(),
-  icon: z.string(),
-  color: z.string(),
+  user_id: z.string(),
+  display_name: z.string(),
+  email: z.string(),
   created_at: z.string(),
-  owner_id: z.string(),
-  owner_name: z.string(),
-  owner_email: z.string(),
   plan_id: z.string(),
   effective_plan_id: z.string(),
   status: z.enum(SUBSCRIPTION_STATUSES),
   trial_ends_at: z.string().nullable(),
   trial_expired: z.boolean(),
   current_period_end: z.string().nullable(),
+  custom_price_cents: num.nullable(),
+  monthly_price_cents: num,
   notes: z.string(),
   billing_customer_id: z.string().nullable(),
   billing_subscription_id: z.string().nullable(),
   subscription_updated_at: z.string().nullable(),
+  max_workspaces: num.nullable(),
   max_members: num.nullable(),
   max_items_per_module: num.nullable(),
-  storage_mb: num,
+  storage_mb: num.nullable(),
   modules: z.array(z.string()).transform((m) => m.filter(isModuleType)),
-  member_count: num,
-  pending_invitations: num,
-  storage_bytes: num,
-  usage: counts,
+  workspace_count: num,
 });
 export type CustomerDetail = z.infer<typeof customerDetailSchema>;
+
+export const customerWorkspaceSchema = z.object({
+  workspace_id: z.string(),
+  name: z.string(),
+  icon: z.string(),
+  color: z.string(),
+  created_at: z.string(),
+  member_count: num,
+  pending_invitations: num,
+  item_count: num,
+  storage_bytes: num,
+});
+export type CustomerWorkspace = z.infer<typeof customerWorkspaceSchema>;
 
 export const customerMemberSchema = z.object({
   user_id: z.string(),
@@ -79,6 +81,7 @@ export const AUDIT_ACTIONS = [
   "status_changed",
   "trial_extended",
   "notes_updated",
+  "custom_price_set",
   "admin_granted",
   "admin_revoked",
   "billing_synced",
@@ -91,6 +94,8 @@ export const auditEntrySchema = z.object({
   action: z.enum(AUDIT_ACTIONS),
   actor_id: z.string().nullable(),
   actor_email: z.string(),
+  subject_user_id: z.string().nullable(),
+  subject_email: z.string(),
   workspace_id: z.string().nullable(),
   workspace_name: z.string(),
   details: z.record(z.string(), z.unknown()),
@@ -98,12 +103,15 @@ export const auditEntrySchema = z.object({
 export type AuditEntry = z.infer<typeof auditEntrySchema>;
 
 export const overviewSchema = z.object({
+  total_customers: num,
   total_workspaces: num,
   total_users: num,
-  new_workspaces_30d: num,
+  new_customers_30d: num,
   active_trials: num,
   mrr_cents: num,
-  by_plan: z.array(z.object({ plan_id: z.string(), name: z.string(), monthly_price_cents: num, workspaces: num, paying: num })),
+  by_plan: z.array(
+    z.object({ plan_id: z.string(), name: z.string(), monthly_price_cents: num, customers: num, paying: num, workspaces: num, mrr_cents: num }),
+  ),
   by_status: z.record(z.string(), num).transform(
     (rec) => Object.fromEntries(SUBSCRIPTION_STATUSES.map((s) => [s, rec[s] ?? 0])) as Record<SubscriptionStatus, number>,
   ),
@@ -116,6 +124,10 @@ function planName(id: unknown): string {
 
 function statusName(s: unknown): string {
   return typeof s === "string" && (SUBSCRIPTION_STATUSES as readonly string[]).includes(s) ? STATUS_LABELS[s as SubscriptionStatus] : "?";
+}
+
+function price(cents: unknown): string {
+  return typeof cents === "number" ? `${formatPrice(cents)}/mo` : "not set";
 }
 
 function day(iso: unknown): string {
@@ -139,6 +151,8 @@ export function describeAuditEntry(entry: Pick<AuditEntry, "action" | "details">
     }
     case "notes_updated":
       return { title: "Notes updated", detail: typeof d.after === "string" && d.after ? `“${d.after.slice(0, 120)}”` : "Notes cleared" };
+    case "custom_price_set":
+      return { title: "Custom price set", detail: `${price(d.from)} → ${price(d.to)}` };
     case "admin_granted":
       return { title: "Platform admin granted", detail: String(d.email ?? "") };
     case "admin_revoked":

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, HardDrive, Lock, Users } from "lucide-react";
+import { ArrowUpRight, Building2, HardDrive, Lock, Users } from "lucide-react";
 import { MODULES, MODULE_TYPES } from "@collabverse/shared";
 import type { WorkspaceBilling } from "@/lib/billing";
 import { STATUS_TONES, daysUntil, formatBytes, formatPrice, formatStorageMb, statusSummary } from "@/lib/billing";
@@ -33,7 +33,8 @@ function StateLine({ billing }: { billing: WorkspaceBilling }) {
   }
   if (billing.status === "past_due") return <>The last payment didn&apos;t go through. Everything keeps working for now.</>;
   if (billing.currentPeriodEnd) return <>Renews {longDate(billing.currentPeriodEnd)}.</>;
-  return billing.monthlyPriceCents === 0 ? <>Free, for as long as you like.</> : <>Billed per workspace, not per seat.</>;
+  if (billing.planId === "custom") return <>Custom plan, priced for your organisation.</>;
+  return billing.monthlyPriceCents === 0 ? <>Free, for as long as you like.</> : <>One price covers all of the account&apos;s workspaces.</>;
 }
 
 /** Current plan, status and usage against the plan's limits (settings → General). */
@@ -48,6 +49,7 @@ export function PlanUsageCard({ billing }: { billing: WorkspaceBilling | null })
   }
 
   const isFree = billing.planId === "free";
+  const storageLimit = billing.storageMb === null ? null : billing.storageMb * MB;
   const included = MODULE_TYPES.filter((m) => billing.modules.includes(m));
   const locked = MODULE_TYPES.filter((m) => !billing.modules.includes(m));
 
@@ -55,7 +57,9 @@ export function PlanUsageCard({ billing }: { billing: WorkspaceBilling | null })
     <section aria-labelledby="plan-title" className="mb-6 overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border bg-surface-2/40 p-5">
         <div className="min-w-0">
-          <p className="font-mono text-[11px] tracking-wider text-muted uppercase">Current plan</p>
+          <p className="font-mono text-[11px] tracking-wider text-muted uppercase">
+            {billing.isOwner ? "Your plan" : `Plan of ${billing.ownerName || "the workspace owner"}`}
+          </p>
           <div className="mt-1 flex flex-wrap items-center gap-2.5">
             <h2 id="plan-title" className="font-display text-[32px] leading-none tracking-tight text-text">
               {billing.planName}
@@ -70,9 +74,11 @@ export function PlanUsageCard({ billing }: { billing: WorkspaceBilling | null })
             <StateLine billing={billing} />
           </p>
         </div>
-        <Link href={UPGRADE_HREF} className={ctaClass(isFree ? "primary" : "outline", "md")}>
-          {isFree ? "Upgrade" : "Compare plans"} <ArrowUpRight aria-hidden className="size-4" />
-        </Link>
+        {billing.planId !== "custom" ? (
+          <Link href={UPGRADE_HREF} className={ctaClass(isFree ? "primary" : "outline", "md")}>
+            {isFree ? "Upgrade" : "Compare plans"} <ArrowUpRight aria-hidden className="size-4" />
+          </Link>
+        ) : null}
       </div>
 
       <div className="space-y-5 p-5">
@@ -83,13 +89,19 @@ export function PlanUsageCard({ billing }: { billing: WorkspaceBilling | null })
         ) : null}
 
         <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-          <UsageMeter label="People" icon={<Users />} used={billing.memberCount} limit={billing.maxMembers} />
+          <UsageMeter
+            label={billing.isOwner ? "Your workspaces" : "Owner's workspaces"}
+            icon={<Building2 />}
+            used={billing.ownerWorkspaceCount}
+            limit={billing.maxWorkspaces}
+          />
+          <UsageMeter label="People in this workspace" icon={<Users />} used={billing.memberCount} limit={billing.maxMembers} />
           <UsageMeter
             label="File storage"
             icon={<HardDrive />}
             used={billing.storageBytes}
-            limit={billing.storageMb * MB}
-            format={(n) => (n === billing.storageMb * MB ? formatStorageMb(billing.storageMb) : formatBytes(n))}
+            limit={storageLimit}
+            format={(n) => (storageLimit !== null && n === storageLimit && billing.storageMb !== null ? formatStorageMb(billing.storageMb) : formatBytes(n))}
           />
         </div>
 
@@ -127,7 +139,8 @@ export function PlanUsageCard({ billing }: { billing: WorkspaceBilling | null })
         ) : null}
 
         <p className="text-[12px] text-muted">
-          Limits apply to the whole workspace and are enforced for everyone. Plan changes are made by the CollabVerse team while
+          The plan belongs to the workspace owner&apos;s account and covers every workspace they own. People, items and storage
+          limits apply to each workspace and are enforced for everyone. Plan changes are made by the CollabVerse team while
           self-serve billing is being set up.
         </p>
       </div>

@@ -16,6 +16,15 @@ export interface CollabConfig {
   logLevel: "debug" | "info" | "warn" | "error";
 }
 
+/**
+ * Browsers send Origin as scheme://host[:port] in lowercase, with no path or
+ * trailing slash. Configured values are normalised the same way so that
+ * "https://App.example.com/" still matches.
+ */
+export function normalizeOrigin(value: string): string {
+  return value.trim().replace(/^["']|["']$/g, "").replace(/\/+$/, "").toLowerCase();
+}
+
 function int(name: string, fallback: number): number {
   const raw = process.env[name];
   if (raw === undefined || raw === "") return fallback;
@@ -39,7 +48,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): CollabConfig {
     jwtSecret: secret,
     allowedOrigins: (env.COLLAB_ALLOWED_ORIGINS ?? "")
       .split(",")
-      .map((s) => s.trim())
+      .map(normalizeOrigin)
       .filter(Boolean),
     recheckIntervalMs: int("COLLAB_RECHECK_INTERVAL_MS", 15_000),
     flushIntervalMs: int("COLLAB_FLUSH_INTERVAL_MS", 150),

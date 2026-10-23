@@ -4,7 +4,7 @@ import { isRole, parseRoomName, type Role, type RoomKind } from "@collabverse/sh
 import { verifyCollabToken } from "@collabverse/shared/collab-token";
 import { seedMindmap } from "@collabverse/shared/mindmap";
 import { seedCodeProject } from "@collabverse/shared/code";
-import type { CollabConfig } from "./config";
+import { normalizeOrigin, type CollabConfig } from "./config";
 import type { Db } from "./db";
 import type { Logger } from "./logger";
 import { YjsPersistence } from "./persistence";
@@ -118,7 +118,7 @@ export function createCollabServer(
 
     async onUpgrade({ request, socket }) {
       const origin = request.headers.origin;
-      if (config.allowedOrigins.length > 0 && (!origin || !config.allowedOrigins.includes(origin))) {
+      if (config.allowedOrigins.length > 0 && (!origin || !config.allowedOrigins.includes(normalizeOrigin(origin)))) {
         log.warn("rejected websocket upgrade from disallowed origin", { origin: origin ?? null });
         socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
         socket.destroy();

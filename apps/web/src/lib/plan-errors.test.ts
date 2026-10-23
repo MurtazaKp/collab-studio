@@ -14,6 +14,10 @@ describe("planErrorKind", () => {
     expect(planErrorKind("Whiteboard isn't included in the Free plan. Upgrade to use it.")).toBe("module");
     expect(planErrorKind("This workspace has used its 100 MB of file storage. Upgrade for more space.")).toBe("storage");
     expect(planErrorKind(new Error("This workspace is suspended, so it's read-only. Contact support to reactivate it."))).toBe("inactive");
+    expect(planErrorKind("Your Free plan allows up to 1 workspace. Upgrade to create more.")).toBe("workspace_limit");
+    expect(planErrorKind("Your Team plan allows up to 3 workspaces. Upgrade to create more.")).toBe("workspace_limit");
+    expect(planErrorKind("Your account is suspended, so you can't create workspaces. Contact support to reactivate it.")).toBe("inactive");
+    expect(planErrorKind({ message: "x", code: "PT402", hint: "plan_workspace_limit" })).toBe("workspace_limit");
   });
 
   it("falls back to the SQLSTATE, and ignores unrelated errors", () => {

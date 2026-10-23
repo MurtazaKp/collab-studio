@@ -7,13 +7,13 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import {
   auditEntrySchema,
   customerDetailSchema,
-  customerMemberSchema,
   customerRowSchema,
+  customerWorkspaceSchema,
   overviewSchema,
   type AuditEntry,
   type CustomerDetail,
-  type CustomerMember,
   type CustomerRow,
+  type CustomerWorkspace,
   type Overview,
 } from "@/lib/admin-format";
 
@@ -70,7 +70,7 @@ export interface CustomerQuery {
 
 export async function listCustomers(q: CustomerQuery = {}): Promise<{ rows: CustomerRow[]; total: number }> {
   const supabase = await admin();
-  const { data, error } = await supabase.rpc("admin_list_workspaces", {
+  const { data, error } = await supabase.rpc("admin_list_customers", {
     p_search: q.search ?? "",
     p_plan_id: q.planId ?? undefined,
     p_status: q.status ?? undefined,
@@ -82,24 +82,24 @@ export async function listCustomers(q: CustomerQuery = {}): Promise<{ rows: Cust
   return { rows, total: rows[0]?.total_count ?? 0 };
 }
 
-/** The customer, or a 404 if the workspace doesn't exist. */
-export async function getCustomer(workspaceId: string): Promise<{ detail: CustomerDetail; members: CustomerMember[]; audit: AuditEntry[] }> {
-  if (!z.uuid().safeParse(workspaceId).success) notFound();
+/** The customer (an account), or a 404 if there is no such account. */
+export async function getCustomer(userId: string): Promise<{ detail: CustomerDetail; workspaces: CustomerWorkspace[]; audit: AuditEntry[] }> {
+  if (!z.uuid().safeParse(userId).success) notFound();
   const supabase = await admin();
-  const [detail, members, audit] = await Promise.all([
-    supabase.rpc("admin_get_workspace", { p_workspace_id: workspaceId }),
-    supabase.rpc("admin_workspace_members", { p_workspace_id: workspaceId }),
-    supabase.rpc("admin_list_audit_log", { p_workspace_id: workspaceId, p_limit: 50 }),
+  const [detail, workspaces, audit] = await Promise.all([
+    supabase.rpc("admin_get_customer", { p_user_id: userId }),
+    supabase.rpc("admin_customer_workspaces", { p_user_id: userId }),
+    supabase.rpc("admin_list_audit_log", { p_user_id: userId, p_limit: 50 }),
   ]);
   if (detail.error?.code === "P0002") notFound();
   if (detail.error) throw detail.error;
-  if (members.error) throw members.error;
+  if (workspaces.error) throw workspaces.error;
   if (audit.error) throw audit.error;
   const [row] = parseRows(customerDetailSchema, detail.data, "customer");
   if (!row) notFound();
   return {
     detail: row,
-    members: parseRows(customerMemberSchema, members.data, "member list"),
+    workspaces: parseRows(customerWorkspaceSchema, workspaces.data, "workspace list"),
     audit: parseRows(auditEntrySchema, audit.data, "audit log"),
   };
 }

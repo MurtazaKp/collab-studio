@@ -15,7 +15,7 @@ export function SiteFooter() {
         <div className="max-w-xs">
           <Wordmark />
           <p className="mt-3 text-[13px] leading-relaxed text-text-2">
-            One live workspace for small teams. Flat price per workspace, private by default.
+            One live workspace for small teams. Flat price per account, private by default.
           </p>
         </div>
         <nav aria-label="Footer">

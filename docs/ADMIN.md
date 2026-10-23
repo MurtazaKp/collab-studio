@@ -1,10 +1,14 @@
 # Platform admin, plans and limits
 
-CollabVerse staff manage customers from the admin console at **`/admin`**. Each
-workspace (a customer's "room") has a plan and a subscription status, and the
-database enforces the plan's limits for every request.
+CollabVerse staff manage customers from the admin console at **`/admin`**. A
+**customer is an account** (a signed-up user). Each account has one plan and a
+subscription status, and **every workspace the account owns runs on that
+plan**. The database enforces the plan's limits for every request.
 
-Everything here comes from `supabase/migrations/20261023000009_platform_admin_billing.sql`.
+Everything here comes from
+`supabase/migrations/20261023000009_platform_admin_billing.sql` (admins, plans,
+enforcement) and `supabase/migrations/20261023000010_account_plans.sql` (plans
+per account, workspace limits, the Custom plan).
 
 ## Granting the first platform admin
 
@@ -47,44 +51,57 @@ admin's own session and calls `SECURITY DEFINER` RPCs that check
 
 | RPC | What it does |
 | --- | --- |
-| `admin_overview()` | Totals, workspaces by plan and status, estimated MRR |
-| `admin_list_workspaces(search, plan, status, limit, offset)` | Customers list with owner email, plan, status, member and item counts |
-| `admin_get_workspace(id)` / `admin_workspace_members(id)` | Customer detail and its members |
-| `admin_set_plan(id, plan)` | Change plan |
-| `admin_set_status(id, status, reason)` | `active`, `past_due`, `canceled` or `suspended` (suspend / reactivate) |
-| `admin_extend_trial(id, days)` | Start or extend a trial (1–90 days); a Free workspace moves to a Team trial |
-| `admin_set_notes(id, notes)` | Internal notes (max 2000 characters) |
-| `admin_list_audit_log(id?, limit)` | The audit log, optionally for one workspace |
+| `admin_overview()` | Customers, workspaces, customers by plan and status, estimated MRR |
+| `admin_list_customers(search, plan, status, limit, offset)` | Customers with plan, status, workspace count and people. With no search it lists accounts that own a workspace or have a plan/status set; a search finds any account by name, email, workspace name or id |
+| `admin_get_customer(user_id)` | One customer's plan, status, limits, price and notes |
+| `admin_customer_workspaces(user_id)` | The workspaces they own, with people, items, storage and pending invitations |
+| `admin_workspace_members(workspace_id)` | Members of one workspace |
+| `admin_set_plan(user_id, plan)` | Change plan (applies to all their workspaces) |
+| `admin_set_status(user_id, status, reason)` | `active`, `past_due`, `canceled` or `suspended` (suspend / reactivate) |
+| `admin_extend_trial(user_id, days)` | Start or extend a trial (1–90 days); a Free account moves to a Team trial |
+| `admin_set_custom_price(user_id, cents)` | Monthly price for a Custom-plan customer (`null` clears it) |
+| `admin_set_notes(user_id, notes)` | Internal notes (max 2000 characters) |
+| `admin_list_audit_log(user_id?, limit)` | The audit log, optionally for one customer |
 
 All of them are revoked from `public` and `anon`. Every change writes a row to
-`admin_audit_log` (actor, action, workspace, before/after) — append-only and
-readable only through `admin_list_audit_log()`.
+`admin_audit_log` (actor, action, customer, before/after), which is append-only
+and readable only through `admin_list_audit_log()`.
 
 ## Plans and the limits they enforce
 
 Derived from `apps/web/src/components/marketing/plans.ts` and the pricing page.
 `apps/web/src/lib/plans.test.ts` fails if the two drift apart.
 
-| | Free | Team | Business |
-| --- | --- | --- | --- |
-| Price (per workspace) | $0 | $29/mo or $290/yr | $79/mo or $790/yr |
-| People (members) | 3 | 15 | 50 |
-| Items per tool | 25 | unlimited | unlimited |
-| File storage | 100 MB | 10 GB | 50 GB |
-| Tools | Docs, Kanban, Chat, TODO List | all 8 | all 8 |
+| | Free | Team | Business | Custom |
+| --- | --- | --- | --- | --- |
+| Price (per account) | $0 | $29/mo or $290/yr | $79/mo or $790/yr | Agreed per customer |
+| Workspaces the account may own | 1 | 3 | 10 | unlimited |
+| People in each workspace | 3 | 15 | 50 | unlimited |
+| Items per tool, per workspace | 25 | unlimited | unlimited | unlimited |
+| File storage per workspace | 100 MB | 10 GB | 50 GB | unlimited |
+| Tools | Docs, Kanban, Chat, TODO List | all 8 | all 8 | all 8 |
 
-Choices made where the pricing page is silent:
-
-- **Free tools.** The page says Free doesn't include "All 8 tools" without naming
-  which it has; Free gets the four core tools (Docs, Kanban, Chat, TODO List).
-  Whiteboard, Mindmap, Code and Playlist need Team or Business.
-- **Item limits.** The page names none. Free allows 25 top-level items per tool
-  (documents, boards, channels, lists…); paid plans are unlimited.
+- **Custom** is for organisations with many teams, sites or clients. Set its
+  monthly price on the customer page (it counts as $0 in MRR until set). The
+  pricing page's "Contact us" button goes to `NEXT_PUBLIC_SALES_URL` (for example
+  `mailto:sales@yourdomain.com`); until that is set it starts a sign-up.
+- **Free tools.** Free gets the four core tools (Docs, Kanban, Chat, TODO List).
+  Whiteboard, Mindmap, Code and Playlist need a paid plan.
 - **Pending invitations** don't count toward the member limit; the check runs when
   an invitation is created and again when it is accepted.
-- **Trials.** The marketing trial is a 14-day Team trial. New workspaces still start
-  on **Free / active**; admins start trials from the console. When a trial ends
-  the workspace falls back to Free limits (it is not locked).
+- **Trials.** The marketing trial is a 14-day Team trial. New accounts start on
+  **Free / active**; admins start trials from the console. When a trial ends the
+  account falls back to Free limits (it is not locked).
+- **Members of someone else's workspace** use that workspace owner's plan, not
+  their own. Joining a workspace never counts toward your own workspace limit.
+
+### Upgrades switch tools back on
+
+When a Free account creates a workspace, the tools Free lacks are switched off
+and flagged (`workspace_modules.plan_disabled`). When the account moves to a
+plan that includes them (plan change, trial, reactivation or a billing update),
+those tools are switched back on in every workspace the account owns. Tools an
+owner switched off themselves stay off.
 
 ### Status
 
@@ -92,31 +109,44 @@ Choices made where the pricing page is silent:
 | --- | --- |
 | `trialing`, `active` | Normal use within the plan |
 | `past_due` | Normal use (grace period for a failed payment); still counted in estimated MRR and flagged in the console |
-| `canceled`, `suspended` | **Read-only**: members can read everything; every create, edit and delete is refused, and collaboration rooms open read-only |
+| `canceled`, `suspended` | **Read-only** across every workspace the account owns: members can read everything; every create, edit and delete is refused, collaboration rooms open read-only, and no new workspaces can be created |
 
 ### Where it's enforced
 
 In the database, so clients can't skip it:
 
+- `enforce_workspace_count` on `workspaces` — workspaces per account, on create
+  and on ownership transfer (the new owner needs room on their plan).
 - `create_invitation` / `accept_invitation*` — member limit and read-only.
 - `enforce_workspace_plan` triggers on every content table — read-only, tools
   outside the plan, and item limits on the top-level item tables.
 - `enforce_module_plan` on `workspace_modules` — tools outside the plan can't be
-  switched on (they are switched off when a Free workspace is created).
+  switched on.
 - `enforce_storage_quota` on `attachments` — storage quota.
 - `collab.room_access` — returns `viewer` when the workspace is read-only or its
   plan no longer includes the tool, so the collaboration server makes the room
   read-only (including for editors already connected).
 
-Requests with no signed-in user (the collaboration server, service-role jobs)
-are not metered. Downgrading never deletes anything: existing content stays
-readable, and new content is refused until the workspace is back under its limits.
+Requests with no signed-in user (the collaboration server, service-role jobs,
+the SQL editor) are not metered. Downgrading never deletes anything: existing
+workspaces and content stay readable, and new ones are refused until the
+account is back under its limits.
 
 Errors use SQLSTATE `PT402` (limits) or `PT403` (read-only) with a hint
-(`plan_member_limit`, `plan_item_limit`, `plan_module`, `plan_storage`,
-`plan_inactive`). The web app turns them into a toast with an **Upgrade** link to
-`/pricing` (`apps/web/src/lib/plan-errors.ts`, `lib/notify-error.tsx`). Workspace
-settings show the plan, status and usage against each limit.
+(`plan_workspace_limit`, `plan_member_limit`, `plan_item_limit`, `plan_module`,
+`plan_storage`, `plan_inactive`). The web app turns them into a message with a
+link to `/pricing` (`apps/web/src/lib/plan-errors.ts`, `lib/notify-error.tsx`).
+Workspace settings show the owner's plan, status and usage against each limit.
+
+### Upgrading from per-workspace plans
+
+Migration `20261023000010` replaces `workspace_subscriptions` with
+`account_subscriptions`. Each workspace owner keeps the best plan any of their
+workspaces had (writable statuses first, then the highest plan), workspace
+notes are carried over, labelled by workspace, and tools switched off by the
+old plans are switched back on where the new plan includes them. An owner who
+already has more workspaces than their plan allows keeps them all, but can't
+create more.
 
 ## Payment provider seam (not connected)
 
@@ -126,7 +156,7 @@ console. When Stripe (or similar) is added:
 - Run the webhook handler **outside the web app** (for example a Supabase Edge
   Function) with the service role, and verify the provider's signature.
 - Map checkout / subscription / invoice events to a plan and status and call
-  `public.billing_apply_provider_update(workspace_id, plan_id, status, current_period_end, customer_id, subscription_id)`.
+  `public.billing_apply_provider_update(user_id, plan_id, status, current_period_end, customer_id, subscription_id)`.
   It is executable by `service_role` only, stores the provider ids on
-  `workspace_subscriptions`, never lifts a suspension, and writes a
+  `account_subscriptions`, never lifts a suspension, and writes a
   `billing_synced` audit entry.

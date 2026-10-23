@@ -7,6 +7,7 @@ const PLAN_STYLE: Record<string, string> = {
   free: "border-border bg-surface text-text-2",
   team: "border-accent/30 bg-accent-soft text-accent",
   business: "border-transparent bg-text text-bg",
+  custom: "border-success/40 bg-success-soft text-success",
 };
 
 export function PlanBadge({ planId, className }: { planId: string; className?: string }) {

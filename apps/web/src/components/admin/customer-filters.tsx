@@ -22,7 +22,7 @@ export function CustomerFilters({ q, plan, status }: { q: string; plan: string; 
           name="q"
           type="search"
           defaultValue={q}
-          placeholder="Search by workspace, owner email or id"
+          placeholder="Search by name, email, workspace or id"
           aria-label="Search customers"
           maxLength={100}
           className="pl-8"

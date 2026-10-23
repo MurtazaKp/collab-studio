@@ -18,18 +18,26 @@ const row = {
   storage_bytes: "1048576",
   modules: ["docs", "kanban", "chat", "shopping", "bogus"],
   usage: { docs: 4, chat: 1 },
+  max_workspaces: 1,
+  owner_workspace_count: 1,
+  owner_name: "Ada",
+  is_owner: false,
 };
 
 describe("workspaceUsageSchema", () => {
   it("normalises the RPC row: numbers, known modules only, every module counted", () => {
     const b = workspaceUsageSchema.parse(row);
     expect(b).toMatchObject({ planId: "free", memberCount: 2, maxMembers: 3, storageBytes: 1048576, writable: true });
+    // The plan is the workspace owner's.
+    expect(b).toMatchObject({ maxWorkspaces: 1, ownerWorkspaceCount: 1, ownerName: "Ada", isOwner: false });
     expect(b.modules).toEqual(["docs", "kanban", "chat", "shopping"]);
     expect(b.usage).toEqual({ docs: 4, whiteboard: 0, kanban: 0, chat: 1, mindmap: 0, code: 0, playlist: 0, shopping: 0 });
   });
 
   it("keeps unlimited limits as null and rejects unknown statuses", () => {
     expect(workspaceUsageSchema.parse({ ...row, max_members: null, max_items_per_module: null })).toMatchObject({ maxMembers: null, maxItemsPerModule: null });
+    // Custom: no workspace or storage limit.
+    expect(workspaceUsageSchema.parse({ ...row, max_workspaces: null, storage_mb: null })).toMatchObject({ maxWorkspaces: null, storageMb: null });
     expect(workspaceUsageSchema.safeParse({ ...row, status: "frozen" }).success).toBe(false);
   });
 });

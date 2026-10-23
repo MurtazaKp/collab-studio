@@ -117,17 +117,26 @@ export async function addMember(db: PGlite, workspaceId: string, user: TestUser,
 }
 
 /**
- * Put a workspace on a plan directly (as superuser), for tests that exercise
- * modules outside the Free plan. Also switches every module on, since modules
- * the plan lacked were turned off when the workspace was created.
+ * Put an account on a plan directly (as superuser). Every workspace the
+ * account owns runs on that plan.
+ */
+export async function setAccountPlan(db: PGlite, user: TestUser | string, planId: string, status = "active") {
+  await db.query(
+    `update public.account_subscriptions
+        set plan_id = $2, status = $3, trial_ends_at = case when $3 = 'trialing' then now() + interval '14 days' end
+      where user_id = $1`,
+    [typeof user === "string" ? user : user.id, planId, status],
+  );
+}
+
+/**
+ * Put a workspace's owner on a plan directly (as superuser), for tests that
+ * exercise modules outside the Free plan. Also switches every module of the
+ * workspace on, since modules the plan lacked were turned off at creation.
  */
 export async function setPlan(db: PGlite, workspaceId: string, planId: string, status = "active") {
-  await db.query(
-    `update public.workspace_subscriptions
-        set plan_id = $2, status = $3, trial_ends_at = case when $3 = 'trialing' then now() + interval '14 days' end
-      where workspace_id = $1`,
-    [workspaceId, planId, status],
-  );
+  const owner = await db.query<{ owner_id: string }>(`select owner_id from public.workspaces where id = $1`, [workspaceId]);
+  await setAccountPlan(db, owner.rows[0]!.owner_id, planId, status);
   await db.query(`update public.workspace_modules set enabled = true where workspace_id = $1`, [workspaceId]);
 }
 

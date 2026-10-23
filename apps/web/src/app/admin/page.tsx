@@ -5,11 +5,12 @@ import { getOverview, listAuditLog, listCustomers } from "@/lib/admin";
 import { SUBSCRIPTION_STATUSES, STATUS_LABELS, STATUS_TONES, formatPrice } from "@/lib/billing";
 import { AuditList } from "@/components/admin/audit-list";
 import { PlanBadge } from "@/components/admin/badges";
-import { cn, colorVar, timeAgo } from "@/lib/utils";
+import { Avatar } from "@/components/ui/misc";
+import { cn, timeAgo } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Overview" };
 
-const PLAN_FILL: Record<string, string> = { free: "var(--border-strong)", team: "var(--accent)", business: "var(--text)" };
+const PLAN_FILL: Record<string, string> = { free: "var(--border-strong)", team: "var(--accent)", business: "var(--text)", custom: "var(--success)" };
 const DOT: Record<(typeof STATUS_TONES)[keyof typeof STATUS_TONES], string> = {
   neutral: "bg-border-strong",
   accent: "bg-accent",
@@ -58,7 +59,7 @@ function Tile({
 export default async function AdminOverviewPage() {
   const [overview, newest, audit] = await Promise.all([getOverview(), listCustomers({ limit: 6 }), listAuditLog(8)]);
   const paying = overview.by_plan.reduce((n, p) => n + p.paying, 0);
-  const total = Math.max(overview.total_workspaces, 1);
+  const total = Math.max(overview.total_customers, 1);
 
   return (
     <>
@@ -66,7 +67,7 @@ export default async function AdminOverviewPage() {
         <div>
           <p className="font-mono text-[11.5px] tracking-wider text-muted uppercase">Platform</p>
           <h1 className="mt-1 font-display text-[40px] leading-tight tracking-tight text-text">Overview</h1>
-          <p className="mt-1 text-[14px] text-text-2">Every workspace on CollabVerse, by plan and status.</p>
+          <p className="mt-1 text-[14px] text-text-2">Every customer on CollabVerse, by plan and status. A plan covers all of a customer&apos;s workspaces.</p>
         </div>
         <Link href="/admin/customers" className="inline-flex items-center gap-1.5 text-[13.5px] font-medium text-accent hover:underline">
           All customers <ArrowRight aria-hidden className="size-4" />
@@ -87,35 +88,40 @@ export default async function AdminOverviewPage() {
           <p className="mt-4 font-display text-[72px] leading-none tracking-tight text-text tabular-nums">{formatPrice(overview.mrr_cents)}</p>
           <p className="mt-3 text-[14px] text-text-2">
             <span className="font-medium text-text tabular-nums">{formatPrice(overview.mrr_cents * 12)}</span> annual run-rate from{" "}
-            <span className="font-medium text-text tabular-nums">{paying}</span> paying workspace{paying === 1 ? "" : "s"}
+            <span className="font-medium text-text tabular-nums">{paying}</span> paying customer{paying === 1 ? "" : "s"}
           </p>
           <div className="mt-8 space-y-2.5">
             {overview.by_plan
-              .filter((p) => p.monthly_price_cents > 0)
+              .filter((p) => p.plan_id !== "free")
               .map((p) => (
                 <div key={p.plan_id} className="flex items-center gap-3 text-[13px]">
                   <span aria-hidden className="size-2 rounded-full" style={{ background: PLAN_FILL[p.plan_id] ?? "var(--muted)" }} />
                   <span className="w-20 text-text-2">{p.name}</span>
                   <span className="flex-1 text-muted tabular-nums">
-                    {p.paying} × {formatPrice(p.monthly_price_cents)}
+                    {p.plan_id === "custom" ? `${p.paying} at agreed prices` : `${p.paying} × ${formatPrice(p.monthly_price_cents)}`}
                   </span>
-                  <span className="font-medium text-text tabular-nums">{formatPrice(p.paying * p.monthly_price_cents)}</span>
+                  <span className="font-medium text-text tabular-nums">{formatPrice(p.mrr_cents)}</span>
                 </div>
               ))}
           </div>
           <p className="mt-6 text-[12px] text-muted">
-            List price of active and past-due workspaces. Trials, canceled and suspended workspaces count as $0. No payment provider is
-            connected, so this is an estimate, not collected revenue.
+            List price of active and past-due customers (Custom at the price set on the customer). Trials, canceled and suspended
+            customers count as $0. No payment provider is connected, so this is an estimate, not collected revenue.
           </p>
         </div>
         <Tile
-          label="Workspaces"
-          value={overview.total_workspaces.toLocaleString()}
-          note={`+${overview.new_workspaces_30d} in the last 30 days`}
-          icon={<Building2 />}
+          label="Customers"
+          value={overview.total_customers.toLocaleString()}
+          note={`+${overview.new_customers_30d} in the last 30 days`}
+          icon={<UsersRound />}
           href="/admin/customers"
         />
-        <Tile label="People" value={overview.total_users.toLocaleString()} note="Signed-up accounts" icon={<UsersRound />} />
+        <Tile
+          label="Workspaces"
+          value={overview.total_workspaces.toLocaleString()}
+          note={`${overview.total_users.toLocaleString()} signed-up accounts`}
+          icon={<Building2 />}
+        />
         <Tile
           label="Active trials"
           value={overview.active_trials.toLocaleString()}
@@ -135,22 +141,22 @@ export default async function AdminOverviewPage() {
       <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <section aria-labelledby="by-plan" className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
           <h2 id="by-plan" className="text-[14px] font-semibold text-text">
-            Workspaces by plan
+            Customers by plan
           </h2>
-          <div className="mt-4 flex h-2.5 overflow-hidden rounded-full bg-surface-3" role="img" aria-label="Share of workspaces per plan">
+          <div className="mt-4 flex h-2.5 overflow-hidden rounded-full bg-surface-3" role="img" aria-label="Share of customers per plan">
             {overview.by_plan.map((p) =>
-              p.workspaces > 0 ? (
-                <span key={p.plan_id} style={{ width: `${(p.workspaces / total) * 100}%`, background: PLAN_FILL[p.plan_id] ?? "var(--muted)" }} />
+              p.customers > 0 ? (
+                <span key={p.plan_id} style={{ width: `${(p.customers / total) * 100}%`, background: PLAN_FILL[p.plan_id] ?? "var(--muted)" }} />
               ) : null,
             )}
           </div>
           <table className="mt-4 w-full text-[13px]">
-            <caption className="sr-only">Workspaces, paying workspaces and estimated MRR per plan</caption>
+            <caption className="sr-only">Customers, their workspaces, paying customers and estimated MRR per plan</caption>
             <thead>
               <tr className="text-left text-[12px] text-muted">
                 <th scope="col" className="pb-2 font-normal">Plan</th>
+                <th scope="col" className="pb-2 text-right font-normal">Customers</th>
                 <th scope="col" className="pb-2 text-right font-normal">Workspaces</th>
-                <th scope="col" className="pb-2 text-right font-normal">Share</th>
                 <th scope="col" className="pb-2 text-right font-normal">Paying</th>
                 <th scope="col" className="pb-2 text-right font-normal">MRR</th>
               </tr>
@@ -163,10 +169,13 @@ export default async function AdminOverviewPage() {
                       <PlanBadge planId={p.plan_id} />
                     </Link>
                   </th>
-                  <td className="py-2.5 text-right text-text tabular-nums">{p.workspaces}</td>
-                  <td className="py-2.5 text-right text-muted tabular-nums">{Math.round((p.workspaces / total) * 100)}%</td>
-                  <td className="py-2.5 text-right text-text tabular-nums">{p.monthly_price_cents > 0 ? p.paying : "—"}</td>
-                  <td className="py-2.5 text-right font-medium text-text tabular-nums">{formatPrice(p.paying * p.monthly_price_cents)}</td>
+                  <td className="py-2.5 text-right text-text tabular-nums">
+                    {p.customers}
+                    <span className="ml-1.5 text-muted">{Math.round((p.customers / total) * 100)}%</span>
+                  </td>
+                  <td className="py-2.5 text-right text-text-2 tabular-nums">{p.workspaces}</td>
+                  <td className="py-2.5 text-right text-text tabular-nums">{p.plan_id !== "free" ? p.paying : "—"}</td>
+                  <td className="py-2.5 text-right font-medium text-text tabular-nums">{formatPrice(p.mrr_cents)}</td>
                 </tr>
               ))}
             </tbody>
@@ -203,26 +212,22 @@ export default async function AdminOverviewPage() {
             </Link>
           </div>
           {newest.rows.length === 0 ? (
-            <p className="px-5 py-8 text-center text-[13px] text-muted">No workspaces yet.</p>
+            <p className="px-5 py-8 text-center text-[13px] text-muted">No customers yet.</p>
           ) : (
             <ul className="divide-y divide-border">
-              {newest.rows.map((w) => (
-                <li key={w.workspace_id}>
-                  <Link href={`/admin/customers/${w.workspace_id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-surface-2/50">
-                    <span
-                      aria-hidden
-                      className="flex size-8 shrink-0 items-center justify-center rounded-lg text-[14px] text-white"
-                      style={{ background: colorVar(w.color) }}
-                    >
-                      {w.icon}
-                    </span>
+              {newest.rows.map((c) => (
+                <li key={c.user_id}>
+                  <Link href={`/admin/customers/${c.user_id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-surface-2/50">
+                    <Avatar name={c.display_name || c.email} size={32} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13.5px] font-medium text-text">{w.name}</span>
-                      <span className="block truncate text-[12px] text-muted">{w.owner_email}</span>
+                      <span className="block truncate text-[13.5px] font-medium text-text">{c.display_name || c.email}</span>
+                      <span className="block truncate text-[12px] text-muted">
+                        {c.email} · {c.workspace_count === 1 ? "1 workspace" : `${c.workspace_count} workspaces`}
+                      </span>
                     </span>
                     <span className="flex shrink-0 flex-col items-end gap-1">
-                      <PlanBadge planId={w.plan_id} />
-                      <span className="text-[11.5px] text-muted">{timeAgo(w.created_at)}</span>
+                      <PlanBadge planId={c.plan_id} />
+                      <span className="text-[11.5px] text-muted">{timeAgo(c.created_at)}</span>
                     </span>
                   </Link>
                 </li>

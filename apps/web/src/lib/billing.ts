@@ -3,6 +3,8 @@ import { MODULE_TYPES, isModuleType, type ModuleType } from "@collabverse/shared
 
 /**
  * Plan and usage of one workspace, as returned by the `workspace_usage` RPC.
+ * A workspace runs on its owner's account plan, so the plan fields describe
+ * the owner's subscription.
  * Shared by server components (which load it) and client components (which
  * display it). The database enforces every limit shown here.
  */
@@ -44,10 +46,14 @@ export const workspaceUsageSchema = z
     max_members: z.coerce.number().nullable(),
     member_count: z.coerce.number(),
     max_items_per_module: z.coerce.number().nullable(),
-    storage_mb: z.coerce.number(),
+    storage_mb: z.coerce.number().nullable(),
     storage_bytes: z.coerce.number(),
     modules: z.array(z.string()),
     usage: usageCounts,
+    max_workspaces: z.coerce.number().nullable(),
+    owner_workspace_count: z.coerce.number(),
+    owner_name: z.string(),
+    is_owner: z.boolean(),
   })
   .transform((r) => ({
     planId: r.plan_id,
@@ -66,6 +72,10 @@ export const workspaceUsageSchema = z
     storageBytes: r.storage_bytes,
     modules: r.modules.filter(isModuleType),
     usage: r.usage,
+    maxWorkspaces: r.max_workspaces,
+    ownerWorkspaceCount: r.owner_workspace_count,
+    ownerName: r.owner_name,
+    isOwner: r.is_owner,
   }));
 
 export type WorkspaceBilling = z.output<typeof workspaceUsageSchema>;

@@ -19,10 +19,10 @@ export async function signIn(browser: Browser, account: TestAccount): Promise<Se
 }
 
 /**
- * Moves a workspace to a paid plan and switches every module on, through the
- * test project's REST API with the service role (test setup only; the web app
- * never holds that key). New workspaces start on Free, which lacks several of
- * the tools these tests exercise.
+ * Moves the workspace owner's account to a paid plan and switches every module
+ * of the workspace on, through the test project's REST API with the service
+ * role (test setup only; the web app never holds that key). New accounts start
+ * on Free, which lacks several of the tools these tests exercise.
  */
 export async function upgradeWorkspace(workspaceId: string, planId = "team"): Promise<void> {
   const headers = {
@@ -31,12 +31,17 @@ export async function upgradeWorkspace(workspaceId: string, planId = "team"): Pr
     "Content-Type": "application/json",
     Prefer: "return=minimal",
   };
-  const patchRows = async (table: string, body: object) => {
-    const res = await fetch(`${e2e.supabaseUrl}/rest/v1/${table}?workspace_id=eq.${workspaceId}`, { method: "PATCH", headers, body: JSON.stringify(body) });
-    if (!res.ok) throw new Error(`Couldn't update ${table} (${res.status}): ${await res.text()}`);
+  const rest = `${e2e.supabaseUrl}/rest/v1`;
+  const ws = await fetch(`${rest}/workspaces?id=eq.${workspaceId}&select=owner_id`, { headers });
+  if (!ws.ok) throw new Error(`Couldn't read workspace ${workspaceId} (${ws.status}): ${await ws.text()}`);
+  const [row] = (await ws.json()) as { owner_id: string }[];
+  if (!row) throw new Error(`Workspace ${workspaceId} not found`);
+  const patch = async (path: string, body: object) => {
+    const res = await fetch(`${rest}/${path}`, { method: "PATCH", headers, body: JSON.stringify(body) });
+    if (!res.ok) throw new Error(`Couldn't update ${path} (${res.status}): ${await res.text()}`);
   };
-  await patchRows("workspace_subscriptions", { plan_id: planId, status: "active" });
-  await patchRows("workspace_modules", { enabled: true });
+  await patch(`account_subscriptions?user_id=eq.${row.owner_id}`, { plan_id: planId, status: "active" });
+  await patch(`workspace_modules?workspace_id=eq.${workspaceId}`, { enabled: true });
 }
 
 /** Workspace id from the current URL. */

@@ -6,8 +6,8 @@ import { SUBSCRIPTION_STATUSES } from "@/lib/billing";
 import { PLANS, planById } from "@/components/marketing/plans";
 import { CustomerFilters } from "@/components/admin/customer-filters";
 import { PlanBadge, StatusBadge } from "@/components/admin/badges";
-import { EmptyState } from "@/components/ui/misc";
-import { cn, colorVar } from "@/lib/utils";
+import { Avatar, EmptyState } from "@/components/ui/misc";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Customers" };
 
@@ -55,7 +55,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="font-mono text-[11.5px] tracking-wider text-muted uppercase">Customers</p>
-          <h1 className="mt-1 font-display text-[40px] leading-tight tracking-tight text-text">Workspaces</h1>
+          <h1 className="mt-1 font-display text-[40px] leading-tight tracking-tight text-text">Customers</h1>
           <p className="mt-1 text-[14px] text-text-2">
             {total.toLocaleString()} {q || plan || status ? "matching" : "in total"}
             {plan ? ` on ${planById(plan)?.name}` : ""}
@@ -72,66 +72,54 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
         {rows.length === 0 ? (
           <EmptyState
             title="No customers match"
-            description={q || plan || status ? "Try a different search or clear the filters." : "Workspaces appear here as soon as someone creates one."}
+            description={q || plan || status ? "Try a different search or clear the filters." : "Customers appear here once they create a workspace. Search by email to find anyone else."}
           />
         ) : (
           <div className="overflow-x-auto" role="region" aria-label="Customers" tabIndex={0}>
             <table className="w-full min-w-[820px] text-left text-[13px]">
-              <caption className="sr-only">Customer workspaces with owner, plan, status, usage and creation date</caption>
+              <caption className="sr-only">Customers with plan, status, workspaces, people and sign-up date</caption>
               <thead className="border-b border-border bg-surface-2/50 text-[12px] text-muted">
                 <tr>
-                  <th scope="col" className="px-5 py-2.5 font-medium">Workspace</th>
-                  <th scope="col" className="px-3 py-2.5 font-medium">Owner</th>
+                  <th scope="col" className="px-5 py-2.5 font-medium">Customer</th>
                   <th scope="col" className="px-3 py-2.5 font-medium">Plan</th>
                   <th scope="col" className="px-3 py-2.5 font-medium">Status</th>
+                  <th scope="col" className="px-3 py-2.5 text-right font-medium">Workspaces</th>
                   <th scope="col" className="px-3 py-2.5 text-right font-medium">People</th>
-                  <th scope="col" className="px-3 py-2.5 text-right font-medium">Items</th>
-                  <th scope="col" className="px-5 py-2.5 text-right font-medium">Created</th>
+                  <th scope="col" className="px-5 py-2.5 text-right font-medium">Joined</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {rows.map((w) => {
-                  const limit = planById(w.plan_id)?.limits.maxMembers ?? null;
-                  const full = limit !== null && w.member_count >= limit;
+                {rows.map((c) => {
+                  const full = c.max_workspaces !== null && c.workspace_count >= c.max_workspaces;
                   return (
-                    <tr key={w.workspace_id} className="group relative transition-colors hover:bg-surface-2/50">
+                    <tr key={c.user_id} className="group relative transition-colors hover:bg-surface-2/50">
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
-                          <span
-                            aria-hidden
-                            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-[14px] text-white"
-                            style={{ background: colorVar(w.color) }}
-                          >
-                            {w.icon}
-                          </span>
+                          <Avatar name={c.display_name || c.email} size={32} />
                           <div className="min-w-0">
                             {/* The stretched link makes the whole row clickable. */}
                             <Link
-                              href={`/admin/customers/${w.workspace_id}`}
-                              className="block max-w-[240px] truncate font-medium text-text after:absolute after:inset-0 group-hover:text-accent"
+                              href={`/admin/customers/${c.user_id}`}
+                              className="block max-w-[260px] truncate font-medium text-text after:absolute after:inset-0 group-hover:text-accent"
                             >
-                              {w.name}
+                              {c.display_name || "Unnamed"}
                             </Link>
-                            <span className="block font-mono text-[11px] text-muted">{w.workspace_id.slice(0, 8)}</span>
+                            <span className="block max-w-[260px] truncate text-[12px] text-muted">{c.email}</span>
                           </div>
                         </div>
                       </td>
                       <td className="px-3 py-3">
-                        <span className="block max-w-[220px] truncate text-text">{w.owner_name || "Unnamed"}</span>
-                        <span className="block max-w-[220px] truncate text-[12px] text-muted">{w.owner_email}</span>
+                        <PlanBadge planId={c.plan_id} />
                       </td>
                       <td className="px-3 py-3">
-                        <PlanBadge planId={w.plan_id} />
-                      </td>
-                      <td className="px-3 py-3">
-                        <StatusBadge status={w.status} trialEndsAt={w.trial_ends_at} />
+                        <StatusBadge status={c.status} trialEndsAt={c.trial_ends_at} />
                       </td>
                       <td className={cn("px-3 py-3 text-right tabular-nums", full ? "font-medium text-warning" : "text-text")}>
-                        {w.member_count}
-                        <span className="text-muted">{limit !== null ? ` / ${limit}` : ""}</span>
+                        {c.workspace_count}
+                        <span className="text-muted">{c.max_workspaces !== null ? ` / ${c.max_workspaces}` : " / ∞"}</span>
                       </td>
-                      <td className="px-3 py-3 text-right text-text tabular-nums">{w.item_count}</td>
-                      <td className="px-5 py-3 text-right text-text-2 tabular-nums">{shortDate(w.created_at)}</td>
+                      <td className="px-3 py-3 text-right text-text tabular-nums">{c.member_count}</td>
+                      <td className="px-5 py-3 text-right text-text-2 tabular-nums">{shortDate(c.created_at)}</td>
                     </tr>
                   );
                 })}

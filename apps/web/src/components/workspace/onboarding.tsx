@@ -1,16 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { ArrowRight, Check, Lock } from "lucide-react";
-import { MODULES, MODULE_TYPES, ROLE_LABELS, WORKSPACE_COLORS, isRole, type ModuleType } from "@collabverse/shared";
+import { MODULES, MODULE_TYPES, ROLE_LABELS, WORKSPACE_COLORS, isModuleType, isRole, type ModuleType } from "@collabverse/shared";
 import { acceptInvitationByIdAction, completeOnboardingAction, createWorkspaceAction } from "@/app/actions/workspace";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { ModuleIcon } from "@/components/ui/module-icon";
 import { Badge, Notice } from "@/components/ui/misc";
-import { FREE_MODULES } from "@/components/marketing/plans";
-import { toastError } from "@/lib/notify-error";
+import { FREE_MODULES, workspacesLabel } from "@/components/marketing/plans";
+import { UPGRADE_HREF, toastError } from "@/lib/notify-error";
+import { planErrorKind } from "@/lib/plan-errors";
+import { getBrowserSupabase } from "@/lib/supabase/client";
 import { cn, colorVar } from "@/lib/utils";
 
 const ICONS = ["✦", "◆", "●", "▲", "✿", "☀", "⚑", "♫", "☕", "⚡", "✎", "⌘"];
@@ -24,18 +27,64 @@ interface PendingInvite {
   inviter_name: string;
 }
 
+interface AccountPlan {
+  planName: string;
+  writable: boolean;
+  modules: ModuleType[];
+  maxWorkspaces: number | null;
+  workspaceCount: number;
+}
+
+/** The signed-in user's own plan: a new workspace runs on it. Null until loaded (or if it can't be). */
+function useAccountPlan(): AccountPlan | null {
+  const [plan, setPlan] = useState<AccountPlan | null>(null);
+  useEffect(() => {
+    let live = true;
+    void getBrowserSupabase()
+      .rpc("my_account_plan")
+      .then(({ data, error }) => {
+        const row = data?.[0];
+        if (!live || error || !row) return;
+        setPlan({
+          planName: row.plan_name,
+          writable: row.writable,
+          modules: row.modules.filter(isModuleType),
+          maxWorkspaces: row.max_workspaces,
+          workspaceCount: row.workspace_count,
+        });
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
+  return plan;
+}
+
 export function WorkspaceForm({ onCreated, submitLabel = "Create workspace" }: { onCreated: (id: string) => void; submitLabel?: string }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("✦");
   const [color, setColor] = useState<string>("iris");
-  // New workspaces start on Free, so only its tools can be switched on here.
+  const plan = useAccountPlan();
+  // Until the plan loads, assume Free; the database decides either way.
+  const allowed: readonly ModuleType[] = plan?.modules ?? FREE_MODULES;
   const [modules, setModules] = useState<ModuleType[]>([...FREE_MODULES]);
+  const touched = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const atLimit = plan !== null && plan.maxWorkspaces !== null && plan.workspaceCount >= plan.maxWorkspaces;
+  const blocked = plan !== null && (!plan.writable || atLimit);
+
+  // Once the plan is known, switch on every tool it includes (unless the user already chose).
+  const [seeded, setSeeded] = useState<AccountPlan | null>(null);
+  if (plan && plan !== seeded) {
+    setSeeded(plan);
+    if (!touched.current) setModules([...plan.modules]);
+  }
 
   const toggle = (m: ModuleType) => {
-    if (!FREE_MODULES.includes(m)) return;
+    if (!allowed.includes(m)) return;
+    touched.current = true;
     setModules((cur) => (cur.includes(m) ? cur.filter((x) => x !== m) : [...cur, m]));
   };
 
@@ -52,7 +101,28 @@ export function WorkspaceForm({ onCreated, submitLabel = "Create workspace" }: {
         });
       }}
     >
-      {error ? <Notice tone="danger">{error}</Notice> : null}
+      {blocked ? (
+        <Notice tone="warning">
+          {!plan.writable
+            ? "Your account is read-only, so you can't create workspaces. Contact support to reactivate it."
+            : `Your ${plan.planName} plan includes ${workspacesLabel(plan.maxWorkspaces).toLowerCase()}, and you're using ${plan.workspaceCount}.`}{" "}
+          {plan.writable ? (
+            <Link href={UPGRADE_HREF} className="font-medium underline">
+              See plans
+            </Link>
+          ) : null}
+        </Notice>
+      ) : null}
+      {error ? (
+        <Notice tone="danger">
+          {error}{" "}
+          {planErrorKind(error) && planErrorKind(error) !== "inactive" ? (
+            <Link href={UPGRADE_HREF} className="font-medium underline">
+              See plans
+            </Link>
+          ) : null}
+        </Notice>
+      ) : null}
       <div className="flex items-end gap-3">
         <div
           aria-hidden
@@ -104,12 +174,15 @@ export function WorkspaceForm({ onCreated, submitLabel = "Create workspace" }: {
       <fieldset>
         <legend className="mb-2 text-[13px] font-medium text-text-2">Modules</legend>
         <p className="-mt-1 mb-2.5 text-[12.5px] text-muted">
-          You can change these any time in settings. New workspaces start on Free; the tools marked Team come with Team and Business.
+          You can change these any time in settings.{" "}
+          {plan === null || allowed.length < MODULE_TYPES.length
+            ? `New workspaces use your ${plan?.planName ?? "account's"} plan; the tools marked Team come with paid plans.`
+            : `Your ${plan.planName} plan includes every tool.`}
         </p>
         <div className="grid grid-cols-2 gap-2">
           {MODULE_TYPES.map((m) => {
             const on = modules.includes(m);
-            const locked = !FREE_MODULES.includes(m);
+            const locked = !allowed.includes(m);
             return (
               <button
                 key={m}
@@ -149,7 +222,7 @@ export function WorkspaceForm({ onCreated, submitLabel = "Create workspace" }: {
           })}
         </div>
       </fieldset>
-      <Button type="submit" variant="primary" size="lg" loading={pending} disabled={!name.trim() || modules.length === 0}>
+      <Button type="submit" variant="primary" size="lg" loading={pending} disabled={!name.trim() || modules.length === 0 || blocked}>
         {submitLabel}
       </Button>
     </form>

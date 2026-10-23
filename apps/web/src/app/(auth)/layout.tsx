@@ -6,7 +6,7 @@ import { ModuleIcon } from "@/components/ui/module-icon";
 const POINTS = [
   "Docs, whiteboards, boards, chat and more in one workspace",
   "Live cursors and presence; edits sync instantly",
-  "One flat price per workspace, not per seat",
+  "One flat price per account, not per seat",
   "Private by default, with Owner, Admin, Member and Viewer roles",
 ];
 

@@ -1,15 +1,17 @@
 /**
  * Recognises the errors the database raises when a workspace hits its plan
- * (see supabase/migrations/20261023000009_platform_admin_billing.sql). The
+ * (see supabase/migrations/20261023000009_platform_admin_billing.sql and
+ * 20261023000010_account_plans.sql). The
  * database is authoritative; this only decides how the error is presented.
  *
  * Supabase errors carry the Postgres HINT (`plan_*`) and SQLSTATE (PT402 /
  * PT403). Server actions pass on just the message, so the wording is matched
  * as a fallback.
  */
-export type PlanErrorKind = "member_limit" | "item_limit" | "module" | "storage" | "inactive";
+export type PlanErrorKind = "workspace_limit" | "member_limit" | "item_limit" | "module" | "storage" | "inactive";
 
 const HINTS: Record<string, PlanErrorKind> = {
+  plan_workspace_limit: "workspace_limit",
   plan_member_limit: "member_limit",
   plan_item_limit: "item_limit",
   plan_module: "module",
@@ -18,14 +20,17 @@ const HINTS: Record<string, PlanErrorKind> = {
 };
 
 const PATTERNS: [RegExp, PlanErrorKind][] = [
+  [/plan allows up to \d+ workspaces?\b/i, "workspace_limit"],
   [/plan allows up to \d+ people/i, "member_limit"],
   [/plan allows up to \d+ /i, "item_limit"],
   [/isn't included in the .+ plan/i, "module"],
   [/of file storage/i, "storage"],
   [/(suspended|canceled), so it's read-only/i, "inactive"],
+  [/account is (suspended|canceled)/i, "inactive"],
 ];
 
 export const PLAN_ERROR_TITLES: Record<PlanErrorKind, string> = {
+  workspace_limit: "Workspace limit reached",
   member_limit: "Your plan is full",
   item_limit: "Plan limit reached",
   module: "Not on your plan",

@@ -21,7 +21,7 @@ const REASONS = [
   },
   {
     title: "One flat price",
-    body: "You pay per workspace, not per seat. Adding your twelfth colleague doesn’t change the bill.",
+    body: "You pay per account, not per seat. Adding your twelfth colleague doesn’t change the bill.",
   },
   {
     title: "Private by default",
@@ -148,13 +148,13 @@ export default async function LandingPage() {
               </div>
               <p className="mt-4 flex items-baseline gap-2">
                 <span className="font-display text-[64px] leading-none tracking-tight text-text">${team.monthly}</span>
-                <span className="text-[14px] text-text-2">per workspace / month</span>
+                <span className="text-[14px] text-text-2">per month</span>
               </p>
               <p className="mt-3 text-[13.5px] text-text-2">
                 With all 15 people on board, that&apos;s under $2 per person.
               </p>
               <ul className="mt-6 space-y-2.5 border-t border-border pt-6">
-                {team.features.slice(1, 4).map((f) => (
+                {team.features.slice(0, 4).map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-[14px] text-text">
                     <Check aria-hidden className="size-4 shrink-0 text-accent" />
                     {f}

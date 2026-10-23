@@ -37,13 +37,13 @@ begin
   -- authorship and activity correctly.
   perform set_config('request.jwt.claims', json_build_object('sub', p_owner, 'role', 'authenticated')::text, true);
 
-  v_ws := public.create_workspace('Demo Studio', 'Sample content for exploring CollabVerse.', '◆', 'teal');
-
-  -- The demo shows every module, so it runs on a Team trial rather than Free.
-  update public.workspace_subscriptions
+  -- The demo shows every module, so a Free account gets a Team trial first
+  -- (which also leaves room for the demo workspace next to the user's own).
+  update public.account_subscriptions
      set plan_id = 'team', status = 'trialing', trial_ends_at = now() + interval '14 days'
-   where workspace_id = v_ws;
-  update public.workspace_modules set enabled = true where workspace_id = v_ws;
+   where user_id = p_owner and plan_id = 'free';
+
+  v_ws := public.create_workspace('Demo Studio', 'Sample content for exploring CollabVerse.', '◆', 'teal');
 
   insert into public.documents (workspace_id, title) values
     (v_ws, 'Welcome to CollabVerse'),

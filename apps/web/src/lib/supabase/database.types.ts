@@ -5,6 +5,51 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: "12" };
   public: {
     Tables: {
+      account_subscriptions: {
+        Row: {
+          user_id: string;
+          plan_id: string;
+          status: "trialing" | "active" | "past_due" | "canceled" | "suspended";
+          trial_ends_at: string | null;
+          current_period_end: string | null;
+          custom_price_cents: number | null;
+          notes: string;
+          billing_customer_id: string | null;
+          billing_subscription_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          plan_id?: string;
+          status?: "trialing" | "active" | "past_due" | "canceled" | "suspended";
+          trial_ends_at?: string | null;
+          current_period_end?: string | null;
+          custom_price_cents?: number | null;
+          notes?: string;
+          billing_customer_id?: string | null;
+          billing_subscription_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          plan_id?: string;
+          status?: "trialing" | "active" | "past_due" | "canceled" | "suspended";
+          trial_ends_at?: string | null;
+          current_period_end?: string | null;
+          custom_price_cents?: number | null;
+          notes?: string;
+          billing_customer_id?: string | null;
+          billing_subscription_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          { foreignKeyName: "account_subscriptions_plan_id_fkey"; columns: ["plan_id"]; isOneToOne: false; referencedRelation: "plans"; referencedColumns: ["id"] },
+          { foreignKeyName: "account_subscriptions_user_id_fkey"; columns: ["user_id"]; isOneToOne: true; referencedRelation: "profiles"; referencedColumns: ["id"] },
+        ];
+      };
       activity_events: {
         Row: {
           id: string;
@@ -49,34 +94,41 @@ export type Database = {
           id: string;
           actor_id: string | null;
           actor_email: string;
-          action: "plan_changed" | "status_changed" | "trial_extended" | "notes_updated" | "admin_granted" | "admin_revoked" | "billing_synced";
+          action: "plan_changed" | "status_changed" | "trial_extended" | "notes_updated" | "custom_price_set" | "admin_granted" | "admin_revoked" | "billing_synced";
           workspace_id: string | null;
           workspace_name: string;
           details: Json;
           created_at: string;
+          subject_user_id: string | null;
+          subject_email: string;
         };
         Insert: {
           id?: string;
           actor_id?: string | null;
           actor_email?: string;
-          action: "plan_changed" | "status_changed" | "trial_extended" | "notes_updated" | "admin_granted" | "admin_revoked" | "billing_synced";
+          action: "plan_changed" | "status_changed" | "trial_extended" | "notes_updated" | "custom_price_set" | "admin_granted" | "admin_revoked" | "billing_synced";
           workspace_id?: string | null;
           workspace_name?: string;
           details?: Json;
           created_at?: string;
+          subject_user_id?: string | null;
+          subject_email?: string;
         };
         Update: {
           id?: string;
           actor_id?: string | null;
           actor_email?: string;
-          action?: "plan_changed" | "status_changed" | "trial_extended" | "notes_updated" | "admin_granted" | "admin_revoked" | "billing_synced";
+          action?: "plan_changed" | "status_changed" | "trial_extended" | "notes_updated" | "custom_price_set" | "admin_granted" | "admin_revoked" | "billing_synced";
           workspace_id?: string | null;
           workspace_name?: string;
           details?: Json;
           created_at?: string;
+          subject_user_id?: string | null;
+          subject_email?: string;
         };
         Relationships: [
           { foreignKeyName: "admin_audit_log_actor_id_fkey"; columns: ["actor_id"]; isOneToOne: false; referencedRelation: "profiles"; referencedColumns: ["id"] },
+          { foreignKeyName: "admin_audit_log_subject_user_id_fkey"; columns: ["subject_user_id"]; isOneToOne: false; referencedRelation: "profiles"; referencedColumns: ["id"] },
           { foreignKeyName: "admin_audit_log_workspace_id_fkey"; columns: ["workspace_id"]; isOneToOne: false; referencedRelation: "workspaces"; referencedColumns: ["id"] },
         ];
       };
@@ -683,13 +735,14 @@ export type Database = {
           annual_price_cents: number | null;
           max_members: number | null;
           max_items_per_module: number | null;
-          storage_mb: number;
+          storage_mb: number | null;
           modules: string[];
           audit_log: boolean;
           priority_support: boolean;
           sort_order: number;
           created_at: string;
           updated_at: string;
+          max_workspaces: number | null;
         };
         Insert: {
           id: string;
@@ -698,13 +751,14 @@ export type Database = {
           annual_price_cents?: number | null;
           max_members?: number | null;
           max_items_per_module?: number | null;
-          storage_mb: number;
+          storage_mb?: number | null;
           modules: string[];
           audit_log?: boolean;
           priority_support?: boolean;
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
+          max_workspaces?: number | null;
         };
         Update: {
           id?: string;
@@ -713,13 +767,14 @@ export type Database = {
           annual_price_cents?: number | null;
           max_members?: number | null;
           max_items_per_module?: number | null;
-          storage_mb?: number;
+          storage_mb?: number | null;
           modules?: string[];
           audit_log?: boolean;
           priority_support?: boolean;
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
+          max_workspaces?: number | null;
         };
         Relationships: [
         ];
@@ -1082,6 +1137,7 @@ export type Database = {
           config: Json;
           created_at: string;
           updated_at: string;
+          plan_disabled: boolean;
         };
         Insert: {
           id?: string;
@@ -1092,6 +1148,7 @@ export type Database = {
           config?: Json;
           created_at?: string;
           updated_at?: string;
+          plan_disabled?: boolean;
         };
         Update: {
           id?: string;
@@ -1102,51 +1159,10 @@ export type Database = {
           config?: Json;
           created_at?: string;
           updated_at?: string;
+          plan_disabled?: boolean;
         };
         Relationships: [
           { foreignKeyName: "workspace_modules_workspace_id_fkey"; columns: ["workspace_id"]; isOneToOne: false; referencedRelation: "workspaces"; referencedColumns: ["id"] },
-        ];
-      };
-      workspace_subscriptions: {
-        Row: {
-          workspace_id: string;
-          plan_id: string;
-          status: "trialing" | "active" | "past_due" | "canceled" | "suspended";
-          trial_ends_at: string | null;
-          current_period_end: string | null;
-          notes: string;
-          billing_customer_id: string | null;
-          billing_subscription_id: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          workspace_id: string;
-          plan_id?: string;
-          status?: "trialing" | "active" | "past_due" | "canceled" | "suspended";
-          trial_ends_at?: string | null;
-          current_period_end?: string | null;
-          notes?: string;
-          billing_customer_id?: string | null;
-          billing_subscription_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          workspace_id?: string;
-          plan_id?: string;
-          status?: "trialing" | "active" | "past_due" | "canceled" | "suspended";
-          trial_ends_at?: string | null;
-          current_period_end?: string | null;
-          notes?: string;
-          billing_customer_id?: string | null;
-          billing_subscription_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          { foreignKeyName: "workspace_subscriptions_plan_id_fkey"; columns: ["plan_id"]; isOneToOne: false; referencedRelation: "plans"; referencedColumns: ["id"] },
-          { foreignKeyName: "workspace_subscriptions_workspace_id_fkey"; columns: ["workspace_id"]; isOneToOne: true; referencedRelation: "workspaces"; referencedColumns: ["id"] },
         ];
       };
       workspaces: {
@@ -1189,14 +1205,16 @@ export type Database = {
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string };
       accept_invitation_by_id: { Args: { p_invitation_id: string }; Returns: string };
-      admin_extend_trial: { Args: { p_workspace_id: string; p_days: number }; Returns: string };
-      admin_get_workspace: { Args: { p_workspace_id: string }; Returns: { workspace_id: string; name: string; description: string; icon: string; color: string; created_at: string; owner_id: string; owner_name: string; owner_email: string; plan_id: string; effective_plan_id: string; status: string; trial_ends_at: string; trial_expired: boolean; current_period_end: string; notes: string; billing_customer_id: string; billing_subscription_id: string; subscription_updated_at: string; max_members: number; max_items_per_module: number; storage_mb: number; modules: string[]; member_count: number; pending_invitations: number; storage_bytes: number; usage: Json }[] };
-      admin_list_audit_log: { Args: { p_workspace_id?: string; p_limit?: number }; Returns: { id: string; created_at: string; action: string; actor_id: string; actor_email: string; workspace_id: string; workspace_name: string; details: Json }[] };
-      admin_list_workspaces: { Args: { p_search?: string; p_plan_id?: string; p_status?: string; p_limit?: number; p_offset?: number }; Returns: { workspace_id: string; name: string; icon: string; color: string; created_at: string; owner_id: string; owner_name: string; owner_email: string; plan_id: string; plan_name: string; status: string; trial_ends_at: string; current_period_end: string; member_count: number; item_count: number; total_count: number }[] };
-      admin_overview: { Args: Record<PropertyKey, never>; Returns: { total_workspaces: number; total_users: number; new_workspaces_30d: number; active_trials: number; mrr_cents: number; by_plan: Json; by_status: Json }[] };
-      admin_set_notes: { Args: { p_workspace_id: string; p_notes: string }; Returns: undefined };
-      admin_set_plan: { Args: { p_workspace_id: string; p_plan_id: string }; Returns: undefined };
-      admin_set_status: { Args: { p_workspace_id: string; p_status: string; p_reason?: string }; Returns: undefined };
+      admin_customer_workspaces: { Args: { p_user_id: string }; Returns: { workspace_id: string; name: string; icon: string; color: string; created_at: string; member_count: number; pending_invitations: number; item_count: number; storage_bytes: number }[] };
+      admin_extend_trial: { Args: { p_user_id: string; p_days: number }; Returns: string };
+      admin_get_customer: { Args: { p_user_id: string }; Returns: { user_id: string; display_name: string; email: string; created_at: string; plan_id: string; effective_plan_id: string; status: string; trial_ends_at: string; trial_expired: boolean; current_period_end: string; custom_price_cents: number; monthly_price_cents: number; notes: string; billing_customer_id: string; billing_subscription_id: string; subscription_updated_at: string; max_workspaces: number; max_members: number; max_items_per_module: number; storage_mb: number; modules: string[]; workspace_count: number }[] };
+      admin_list_audit_log: { Args: { p_user_id?: string; p_limit?: number }; Returns: { id: string; created_at: string; action: string; actor_id: string; actor_email: string; subject_user_id: string; subject_email: string; workspace_id: string; workspace_name: string; details: Json }[] };
+      admin_list_customers: { Args: { p_search?: string; p_plan_id?: string; p_status?: string; p_limit?: number; p_offset?: number }; Returns: { user_id: string; display_name: string; email: string; created_at: string; plan_id: string; plan_name: string; status: string; trial_ends_at: string; custom_price_cents: number; workspace_count: number; max_workspaces: number; member_count: number; total_count: number }[] };
+      admin_overview: { Args: Record<PropertyKey, never>; Returns: { total_customers: number; total_workspaces: number; total_users: number; new_customers_30d: number; active_trials: number; mrr_cents: number; by_plan: Json; by_status: Json }[] };
+      admin_set_custom_price: { Args: { p_user_id: string; p_cents: number }; Returns: undefined };
+      admin_set_notes: { Args: { p_user_id: string; p_notes: string }; Returns: undefined };
+      admin_set_plan: { Args: { p_user_id: string; p_plan_id: string }; Returns: undefined };
+      admin_set_status: { Args: { p_user_id: string; p_status: string; p_reason?: string }; Returns: undefined };
       admin_workspace_members: { Args: { p_workspace_id: string }; Returns: { user_id: string; display_name: string; email: string; role: string; joined_at: string }[] };
       can_edit_workspace: { Args: { p_workspace_id: string }; Returns: boolean };
       can_manage_workspace: { Args: { p_workspace_id: string }; Returns: boolean };
@@ -1212,6 +1230,7 @@ export type Database = {
       is_workspace_member: { Args: { p_workspace_id: string }; Returns: boolean };
       mark_channel_read: { Args: { p_channel_id: string }; Returns: undefined };
       move_task: { Args: { p_task_id: string; p_column_id: string; p_position: string; p_expected_version: number }; Returns: unknown };
+      my_account_plan: { Args: Record<PropertyKey, never>; Returns: { plan_id: string; plan_name: string; status: string; writable: boolean; modules: string[]; max_workspaces: number; workspace_count: number }[] };
       my_pending_invitations: { Args: Record<PropertyKey, never>; Returns: { id: string; workspace_id: string; workspace_name: string; workspace_icon: string; workspace_color: string; role: string; inviter_name: string; expires_at: string }[] };
       remove_member: { Args: { p_workspace_id: string; p_user_id: string }; Returns: undefined };
       require_user: { Args: Record<PropertyKey, never>; Returns: string };
@@ -1222,7 +1241,7 @@ export type Database = {
       update_member_role: { Args: { p_workspace_id: string; p_user_id: string; p_role: string }; Returns: undefined };
       workspace_member_list: { Args: { p_workspace_id: string }; Returns: { user_id: string; display_name: string; avatar_color: string; role: string; joined_at: string; email: string }[] };
       workspace_role: { Args: { p_workspace_id: string }; Returns: string };
-      workspace_usage: { Args: { p_workspace_id: string }; Returns: { plan_id: string; plan_name: string; subscribed_plan_id: string; status: string; trial_ends_at: string; trial_expired: boolean; current_period_end: string; writable: boolean; monthly_price_cents: number; max_members: number; member_count: number; max_items_per_module: number; storage_mb: number; storage_bytes: number; modules: string[]; usage: Json }[] };
+      workspace_usage: { Args: { p_workspace_id: string }; Returns: { plan_id: string; plan_name: string; subscribed_plan_id: string; status: string; trial_ends_at: string; trial_expired: boolean; current_period_end: string; writable: boolean; monthly_price_cents: number; max_members: number; member_count: number; max_items_per_module: number; storage_mb: number; storage_bytes: number; modules: string[]; usage: Json; max_workspaces: number; owner_workspace_count: number; owner_name: string; is_owner: boolean }[] };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

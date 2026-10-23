@@ -1,0 +1,249 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Check, Minus } from "lucide-react";
+import { SiteHeader } from "@/components/marketing/site-header";
+import { SiteFooter } from "@/components/marketing/site-footer";
+import { ctaClass } from "@/components/marketing/cta";
+import { PLANS, TRIAL_NOTE } from "@/components/marketing/plans";
+import { cn } from "@/lib/utils";
+
+export const metadata: Metadata = {
+  title: "Pricing",
+  description:
+    "Flat pricing per workspace, not per seat. Free for up to 3 people, Team at $29/month for up to 15, Business at $79/month for up to 50. 14-day Team trial, no card required.",
+};
+
+type Cell = boolean | string;
+
+const COMPARISON: { group: string; rows: { label: string; values: [Cell, Cell, Cell] }[] }[] = [
+  {
+    group: "Workspace",
+    rows: [
+      { label: "People in the workspace", values: ["Up to 3", "Up to 15", "Up to 50"] },
+      { label: "File storage", values: ["100 MB", "10 GB", "50 GB"] },
+      { label: "All 8 tools", values: [false, true, true] },
+    ],
+  },
+  {
+    group: "Collaboration",
+    rows: [
+      { label: "Live cursors and presence", values: [true, true, true] },
+      { label: "Instant sync of edits", values: [true, true, true] },
+    ],
+  },
+  {
+    group: "Security and control",
+    rows: [
+      { label: "Postgres row-level security", values: [true, true, true] },
+      { label: "Owner, Admin, Member and Viewer roles", values: [true, true, true] },
+      { label: "Audit log", values: [false, false, true] },
+      { label: "Priority support", values: [false, false, true] },
+    ],
+  },
+];
+
+const FAQ = [
+  {
+    q: "What does “per workspace” mean?",
+    a: "You pay one flat price for the workspace, whoever is in it, up to the plan’s limit. A team of 9 and a team of 15 both pay $29 a month on Team.",
+  },
+  {
+    q: "How does the free trial work?",
+    a: "Every new workspace can try Team free for 14 days. We don’t ask for a card to start, so there’s nothing to cancel if you decide it’s not for you.",
+  },
+  {
+    q: "Is there a discount for paying yearly?",
+    a: "Yes. Annual billing gives you two months free: Team is $290 a year and Business is $790 a year.",
+  },
+  {
+    q: "Can we change plans later?",
+    a: "Plans are per workspace, so you can move up as your team grows or back down if it shrinks.",
+  },
+  {
+    q: "Who can see our work?",
+    a: "Only members of your workspace. Access is enforced by Postgres row-level security in the database itself, and roles (Owner, Admin, Member, Viewer) control who can change what.",
+  },
+  {
+    q: "Does the shared code editor run our code?",
+    a: "No. The Code tool is for writing and reviewing code together in a shared editor. Nothing is executed.",
+  },
+  {
+    q: "We have more than 50 people. Is CollabVerse right for us?",
+    a: "CollabVerse is built for small offices, and Business covers up to 50 people. If you’re bigger than that, it’s probably not the right fit yet.",
+  },
+];
+
+function CellValue({ value }: { value: Cell }) {
+  if (typeof value === "string") return <span className="text-text">{value}</span>;
+  return value ? (
+    <>
+      <Check aria-hidden className="mx-auto size-4 text-accent" />
+      <span className="sr-only">Included</span>
+    </>
+  ) : (
+    <>
+      <Minus aria-hidden className="mx-auto size-4 text-muted" />
+      <span className="sr-only">Not included</span>
+    </>
+  );
+}
+
+export default function PricingPage() {
+  return (
+    <div className="min-h-dvh overflow-x-clip">
+      <SiteHeader current="pricing" />
+
+      <main>
+        <section aria-labelledby="pricing-title" className="mx-auto max-w-6xl px-4 pt-14 sm:px-6 lg:pt-20">
+          <div className="max-w-2xl">
+            <p className="text-[13px] font-medium tracking-wide text-accent uppercase">Pricing</p>
+            <h1
+              id="pricing-title"
+              className="mt-4 font-display text-[44px] leading-[1.02] tracking-tight text-balance text-text sm:text-[64px]"
+            >
+              Pay for the workspace, not the headcount.
+            </h1>
+            <p className="mt-5 max-w-xl text-[17px] leading-relaxed text-text-2">
+              One flat monthly price per workspace. Annual billing gets you two months free. {TRIAL_NOTE}
+            </p>
+          </div>
+
+          {/* Plans */}
+          <ul className="mt-12 grid gap-4 lg:grid-cols-3 lg:items-stretch">
+            {PLANS.map((plan) => (
+              <li
+                key={plan.id}
+                className={cn(
+                  "relative flex flex-col rounded-xl border p-6 sm:p-7",
+                  plan.featured ? "border-accent bg-surface shadow-lg" : "border-border bg-surface-2/50",
+                )}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-[17px] font-semibold text-text">{plan.name}</h2>
+                  {plan.featured ? (
+                    <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-[12px] font-medium text-text">
+                      Most teams start here
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-2 text-[14px] leading-relaxed text-text-2">{plan.blurb}</p>
+                <p className="mt-6 flex items-baseline gap-2">
+                  <span className="font-display text-[56px] leading-none tracking-tight text-text">${plan.monthly}</span>
+                  <span className="text-[13.5px] text-text-2">per workspace / month</span>
+                </p>
+                <p className="mt-2 min-h-5 text-[13px] text-text-2">
+                  {plan.annual ? `or $${plan.annual}/year, two months free` : "Free, for as long as you like"}
+                </p>
+                <Link
+                  href="/signup"
+                  className={ctaClass(plan.featured ? "primary" : "outline", "lg", "mt-6 w-full")}
+                  aria-label={`${plan.cta}: ${plan.name} plan`}
+                >
+                  {plan.cta}
+                </Link>
+                <ul className="mt-7 space-y-2.5 border-t border-border pt-6">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2.5 text-[14px] text-text">
+                      <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-accent" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-5 text-[13px] text-text-2">
+            Prices in USD. Paid plans start with a 14-day Team trial; no card required.
+          </p>
+        </section>
+
+        {/* Comparison */}
+        <section aria-labelledby="compare-title" className="mx-auto mt-24 max-w-6xl px-4 sm:px-6">
+          <h2 id="compare-title" className="font-display text-[36px] leading-[1.08] tracking-tight text-text sm:text-[44px]">
+            Compare plans
+          </h2>
+          <div className="relative mt-8 overflow-x-auto rounded-xl border border-border bg-surface" tabIndex={0} role="region" aria-labelledby="compare-title">
+            <table className="w-full min-w-[560px] border-collapse text-left text-[14px]">
+              <caption className="sr-only">Features included in the Free, Team and Business plans</caption>
+              <thead>
+                <tr className="border-b border-border">
+                  <th scope="col" className="w-[40%] px-5 py-4 font-medium text-text-2">
+                    <span className="sr-only">Feature</span>
+                  </th>
+                  {PLANS.map((p) => (
+                    <th key={p.id} scope="col" className="px-4 py-4 text-center">
+                      <span className="block text-[15px] font-semibold text-text">{p.name}</span>
+                      <span className="block text-[12.5px] font-normal text-text-2">${p.monthly}/month</span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              {COMPARISON.map((section) => (
+                <tbody key={section.group}>
+                  <tr className="bg-surface-2">
+                    <th scope="colgroup" colSpan={4} className="px-5 py-2.5 font-mono text-[11.5px] font-normal tracking-wider text-text-2 uppercase">
+                      {section.group}
+                    </th>
+                  </tr>
+                  {section.rows.map((row) => (
+                    <tr key={row.label} className="border-t border-border">
+                      <th scope="row" className="px-5 py-3.5 font-normal text-text">
+                        {row.label}
+                      </th>
+                      {row.values.map((v, i) => (
+                        <td key={PLANS[i]!.id} className="px-4 py-3.5 text-center">
+                          <CellValue value={v} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              ))}
+            </table>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section aria-labelledby="faq-title" className="mx-auto mt-24 max-w-6xl px-4 sm:px-6">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)] lg:gap-16">
+            <div>
+              <h2 id="faq-title" className="font-display text-[36px] leading-[1.08] tracking-tight text-text sm:text-[44px]">
+                Questions, answered
+              </h2>
+              <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-text-2">
+                The short version: one price per workspace, everything live, private by default.
+              </p>
+            </div>
+            <div className="divide-y divide-border border-y border-border">
+              {FAQ.map((item) => (
+                <details key={item.q} className="group">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-[16px] font-medium text-text [&::-webkit-details-marker]:hidden">
+                    {item.q}
+                    <span
+                      aria-hidden
+                      className="relative size-4 shrink-0 text-muted before:absolute before:top-1/2 before:left-0 before:h-px before:w-4 before:bg-current after:absolute after:top-0 after:left-1/2 after:h-4 after:w-px after:bg-current after:transition-transform after:duration-150 group-open:after:scale-y-0"
+                    />
+                  </summary>
+                  <p className="max-w-2xl pb-5 text-[14.5px] leading-relaxed text-text-2">{item.a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="pricing-cta" className="mx-auto mt-24 max-w-6xl px-4 sm:px-6">
+          <div className="flex flex-col items-start gap-6 border-t border-border pt-12 md:flex-row md:items-end md:justify-between">
+            <h2 id="pricing-cta" className="max-w-xl font-display text-[36px] leading-[1.08] tracking-tight text-text sm:text-[48px]">
+              Try Team free for 14 days.
+            </h2>
+            <Link href="/signup" className={ctaClass("primary", "lg")}>
+              Start free trial
+            </Link>
+          </div>
+        </section>
+      </main>
+
+      <SiteFooter />
+    </div>
+  );
+}

@@ -1,0 +1,250 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Design tokens. Warm paper neutrals, one iris accent, and a muted hue per
+ * module used only for glyphs and small accents.
+ */
+:root {
+  --bg: #f6f5f1;
+  --surface: #ffffff;
+  --surface-2: #efede7;
+  --surface-3: #e7e4dc;
+  --border: #e3e0d8;
+  --border-strong: #cfcbc0;
+  --text: #1b1a17;
+  --text-2: #4a4740;
+  --muted: #66625a;
+  --accent: #4b4fd8;
+  --accent-hover: #3d41c4;
+  --accent-soft: #e9e9fb;
+  --accent-text: #ffffff;
+  --danger: #c2372b;
+  --danger-soft: #fbe9e6;
+  --danger-text: #ffffff;
+  --success: #2f7d4f;
+  --success-soft: #e4f3e9;
+  --warning: #8f5408;
+  --warning-soft: #fbf0dc;
+  --ring: rgb(75 79 216 / 0.35);
+  --shadow-sm: 0 1px 2px rgb(27 26 23 / 0.06);
+  --shadow-md: 0 1px 2px rgb(27 26 23 / 0.04), 0 4px 16px rgb(27 26 23 / 0.07);
+  --shadow-lg: 0 2px 4px rgb(27 26 23 / 0.05), 0 16px 40px rgb(27 26 23 / 0.12);
+
+  --mod-docs: #2f6fd6;
+  --mod-whiteboard: #c47d0e;
+  --mod-kanban: #7a4fd0;
+  --mod-chat: #12877a;
+  --mod-mindmap: #cf4a6b;
+  --mod-code: #4e5865;
+  --mod-playlist: #b8459e;
+  --mod-shopping: #4c8a1f;
+
+  --c-iris: #4b4fd8;
+  --c-teal: #12877a;
+  --c-amber: #c47d0e;
+  --c-rose: #cf4a6b;
+  --c-sky: #2f8fd6;
+  --c-lime: #4c8a1f;
+  --c-violet: #7a4fd0;
+  --c-slate: #5b6573;
+
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #121210;
+  --surface: #1a1a17;
+  --surface-2: #201f1c;
+  --surface-3: #2a2925;
+  --border: #2d2c28;
+  --border-strong: #3d3b36;
+  --text: #ecebe6;
+  --text-2: #c4c1b8;
+  --muted: #a09c92;
+  --accent: #7c80f0;
+  --accent-hover: #9195f5;
+  --accent-soft: #24254a;
+  --accent-text: #0d0d1a;
+  --danger: #f0786b;
+  --danger-soft: #3a1d19;
+  --danger-text: #1a0a08;
+  --success: #6cc08f;
+  --success-soft: #16291e;
+  --warning: #e3a649;
+  --warning-soft: #33250f;
+  --ring: rgb(124 128 240 / 0.45);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.35);
+  --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.3), 0 16px 40px rgb(0 0 0 / 0.5);
+
+  --mod-docs: #6aa0f0;
+  --mod-whiteboard: #e3a649;
+  --mod-kanban: #a888ec;
+  --mod-chat: #4cc2b2;
+  --mod-mindmap: #ef7f9b;
+  --mod-code: #9aa5b3;
+  --mod-playlist: #e07cc9;
+  --mod-shopping: #8cc760;
+
+  --c-iris: #7c80f0;
+  --c-teal: #4cc2b2;
+  --c-amber: #e3a649;
+  --c-rose: #ef7f9b;
+  --c-sky: #6ab4f0;
+  --c-lime: #8cc760;
+  --c-violet: #a888ec;
+  --c-slate: #9aa5b3;
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-text: var(--accent-text);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-text: var(--danger-text);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-display: var(--font-display-serif), ui-serif, Georgia, serif;
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  --animate-fade-in: fade-in 160ms ease-out;
+  --animate-pop-in: pop-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes shimmer {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--bg);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Rich-text document surface (Tiptap). */
+.prose-doc {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text);
+}
+.prose-doc:focus { outline: none; }
+.prose-doc > * + * { margin-top: 0.75em; }
+.prose-doc h1 { font-family: var(--font-display); font-size: 2.1em; line-height: 1.15; font-weight: 400; letter-spacing: -0.01em; margin-top: 1.2em; }
+.prose-doc h2 { font-size: 1.45em; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; margin-top: 1.4em; }
+.prose-doc h3 { font-size: 1.15em; font-weight: 600; margin-top: 1.2em; }
+.prose-doc ul { list-style: disc; padding-left: 1.4em; }
+.prose-doc ol { list-style: decimal; padding-left: 1.4em; }
+.prose-doc li > p { margin: 0; }
+.prose-doc ul[data-type="taskList"] { list-style: none; padding-left: 0.2em; }
+.prose-doc ul[data-type="taskList"] li { display: flex; gap: 0.5em; align-items: flex-start; }
+.prose-doc ul[data-type="taskList"] li > label { margin-top: 0.3em; }
+.prose-doc ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--muted); text-decoration: line-through; }
+.prose-doc blockquote { border-left: 3px solid var(--border-strong); padding-left: 1em; color: var(--text-2); }
+.prose-doc code { font-family: var(--font-mono); font-size: 0.88em; background: var(--surface-2); padding: 0.1em 0.35em; border-radius: 4px; }
+.prose-doc pre { font-family: var(--font-mono); background: var(--surface-2); padding: 0.9em 1em; border-radius: 8px; overflow-x: auto; font-size: 0.88em; }
+.prose-doc pre code { background: none; padding: 0; }
+.prose-doc a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.prose-doc hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+.prose-doc p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Collaborator carets (Tiptap CollaborationCaret). */
+.collaboration-carets__caret {
+  position: relative;
+  margin-left: -1px;
+  margin-right: -1px;
+  border-left: 1px solid;
+  border-right: 1px solid;
+  word-break: normal;
+  pointer-events: none;
+}
+.collaboration-carets__label {
+  position: absolute;
+  top: -1.45em;
+  left: -1px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 4px 4px 4px 0;
+  color: #fff;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Remote selections in Monaco (y-monaco). */
+.yRemoteSelection { background-color: rgb(75 79 216 / 0.18); }
+.yRemoteSelectionHead { position: absolute; border-left: 2px solid var(--accent); height: 100%; box-sizing: border-box; }
+
+/* React Flow theming. */
+.react-flow { --xy-background-color: transparent; }
+.react-flow__attribution { display: none; }
+.react-flow__controls { box-shadow: var(--shadow-md); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+.react-flow__controls-button { background: var(--surface); border-bottom: 1px solid var(--border); color: var(--text-2); }
+.react-flow__controls-button:hover { background: var(--surface-2); }
+.react-flow__controls-button svg { fill: currentColor; }
+.react-flow__edge-path { stroke: var(--border-strong); stroke-width: 1.5; }
+.react-flow__minimap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }

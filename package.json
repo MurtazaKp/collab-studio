@@ -1,0 +1,42 @@
+{
+  "name": "collabverse",
+  "private": true,
+  "version": "0.1.0",
+  "description": "CollabVerse — realtime collaboration workspace platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace @collabverse/web",
+    "dev:collab": "npm run dev --workspace @collabverse/collab",
+    "build": "npm run build --workspace @collabverse/shared && npm run build --workspace @collabverse/collab && npm run build --workspace @collabverse/web",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p supabase/tests/tsconfig.json --noEmit",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test:unit && npm run test:db && npm run test:collab",
+    "test:unit": "npm run test --workspace @collabverse/shared && npm run test --workspace @collabverse/web",
+    "test:db": "vitest run --config supabase/tests/vitest.config.ts",
+    "test:collab": "npm run test --workspace @collabverse/collab",
+    "test:e2e": "playwright test",
+    "db:types": "tsx scripts/generate-db-types.ts",
+    "db:check": "tsx scripts/check-migrations.ts",
+    "db:seed-demo": "tsx scripts/seed-demo.ts"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.10",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^22.20.5",
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.5"
+  },
+  "type": "module",
+  "overrides": {
+    "dompurify": "3.4.17"
+  }
+}

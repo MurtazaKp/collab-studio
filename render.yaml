@@ -1,0 +1,19 @@
+# Render Blueprint for the collaboration server (optional; any Node host with
+# persistent WebSockets works — Fly.io, Railway, a small VM).
+services:
+  - type: web
+    name: collabverse-collab
+    runtime: docker
+    dockerfilePath: ./apps/collab/Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: COLLAB_DATABASE_URL
+        sync: false
+      - key: COLLAB_JWT_SECRET
+        sync: false
+      - key: COLLAB_ALLOWED_ORIGINS
+        sync: false
+      - key: LOG_LEVEL
+        value: info

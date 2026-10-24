@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, Minus } from "lucide-react";
 import { SiteHeader } from "@/components/marketing/site-header";
+import { getCurrentUser } from "@/lib/auth";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { ctaClass } from "@/components/marketing/cta";
 import { PLANS, SALES_HREF, TRIAL_NOTE } from "@/components/marketing/plans";
@@ -89,10 +90,11 @@ function CellValue({ value }: { value: Cell }) {
   );
 }
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const signedIn = Boolean(await getCurrentUser());
   return (
     <div className="min-h-dvh overflow-x-clip">
-      <SiteHeader current="pricing" />
+      <SiteHeader current="pricing" signedIn={signedIn} />
 
       <main>
         <section aria-labelledby="pricing-title" className="mx-auto max-w-6xl px-4 pt-14 sm:px-6 lg:pt-20">
@@ -251,7 +253,7 @@ export default function PricingPage() {
         </section>
       </main>
 
-      <SiteFooter />
+      <SiteFooter signedIn={signedIn} />
     </div>
   );
 }

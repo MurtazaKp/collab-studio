@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ArrowRight, Check } from "lucide-react";
 import { MODULES, MODULE_TYPES } from "@collabverse/shared";
 import { getCurrentUser } from "@/lib/auth";
 import { ModuleIcon } from "@/components/ui/module-icon";
-import { SiteHeader } from "@/components/marketing/site-header";
+import { DASHBOARD_HREF, SiteHeader } from "@/components/marketing/site-header";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { ProductPreview } from "@/components/marketing/product-preview";
 import { ctaClass } from "@/components/marketing/cta";
@@ -30,12 +29,14 @@ const REASONS = [
 ];
 
 export default async function LandingPage() {
-  if (await getCurrentUser()) redirect("/w");
+  // Signed-in visitors can read the landing page too; the calls to action
+  // take them to their dashboard instead of sign-up.
+  const signedIn = Boolean(await getCurrentUser());
   const team = PLANS.find((p) => p.id === "team")!;
 
   return (
     <div className="min-h-dvh overflow-x-clip">
-      <SiteHeader />
+      <SiteHeader signedIn={signedIn} />
 
       <main>
         {/* Hero */}
@@ -54,15 +55,15 @@ export default async function LandingPage() {
               they change, as it happens.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href="/signup" className={ctaClass("primary", "lg")}>
-                Start free trial
+              <Link href={signedIn ? DASHBOARD_HREF : "/signup"} className={ctaClass("primary", "lg")}>
+                {signedIn ? "Go to your dashboard" : "Start free trial"}
                 <ArrowRight aria-hidden className="size-4" />
               </Link>
               <Link href="/pricing" className={ctaClass("outline", "lg")}>
                 See pricing
               </Link>
             </div>
-            <p className="mt-4 text-[13px] text-text-2">{TRIAL_NOTE}</p>
+            {signedIn ? null : <p className="mt-4 text-[13px] text-text-2">{TRIAL_NOTE}</p>}
           </div>
 
           <div id="product" className="mt-14 scroll-mt-6 lg:mt-16">
@@ -176,18 +177,26 @@ export default async function LandingPage() {
               Set up your workspace before your next meeting.
             </h2>
             <div className="flex flex-wrap gap-3">
-              <Link href="/signup" className={ctaClass("primary", "lg")}>
-                Start free trial
-              </Link>
-              <Link href="/login" className={ctaClass("ghost", "lg")}>
-                Sign in
-              </Link>
+              {signedIn ? (
+                <Link href={DASHBOARD_HREF} className={ctaClass("primary", "lg")}>
+                  Go to your dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link href="/signup" className={ctaClass("primary", "lg")}>
+                    Start free trial
+                  </Link>
+                  <Link href="/login" className={ctaClass("ghost", "lg")}>
+                    Sign in
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </section>
       </main>
 
-      <SiteFooter />
+      <SiteFooter signedIn={signedIn} />
     </div>
   );
 }

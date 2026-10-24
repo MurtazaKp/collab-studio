@@ -152,7 +152,7 @@ export default async function LandingPage() {
                 <span className="text-[14px] text-text-2">per month</span>
               </p>
               <p className="mt-3 text-[13.5px] text-text-2">
-                With all 15 people on board, that&apos;s under $2 per person.
+                With all 15 people on board, that&apos;s under $2.50 per person.
               </p>
               <ul className="mt-6 space-y-2.5 border-t border-border pt-6">
                 {team.features.slice(0, 4).map((f) => (

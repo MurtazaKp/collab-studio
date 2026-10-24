@@ -67,8 +67,8 @@ describe("account plans", () => {
     );
     expect(r.rows).toEqual([
       { id: "free", monthly_price_cents: 0, max_members: 3, storage_mb: 100, max_workspaces: 1 },
-      { id: "team", monthly_price_cents: 2900, max_members: 15, storage_mb: 10240, max_workspaces: 3 },
-      { id: "business", monthly_price_cents: 7900, max_members: 50, storage_mb: 51200, max_workspaces: 10 },
+      { id: "team", monthly_price_cents: 3500, max_members: 15, storage_mb: 10240, max_workspaces: 3 },
+      { id: "business", monthly_price_cents: 8900, max_members: 50, storage_mb: 51200, max_workspaces: 10 },
       { id: "custom", monthly_price_cents: 0, max_members: null, storage_mb: null, max_workspaces: null },
     ]);
   });

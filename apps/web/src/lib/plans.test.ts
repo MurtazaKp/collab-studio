@@ -8,19 +8,22 @@ import { PLANS } from "@/components/marketing/plans";
 const read = (file: string) => readFileSync(fileURLToPath(new URL(`../../../../supabase/migrations/${file}`, import.meta.url)), "utf8");
 const billing = read("20261023000009_platform_admin_billing.sql");
 const accounts = read("20261023000010_account_plans.sql");
+const prices = read("20261024000012_price_update.sql");
 
 const num = (v: string) => (v === "null" ? null : Number(v));
 const modules = (list: string) => [...list.matchAll(/'(\w+)'/g)].map((x) => x[1]);
 
 function seededPlan(id: string) {
-  // 0009 seeds Free/Team/Business; 0010 adds max_workspaces and seeds Custom.
+  // 0009 seeds Free/Team/Business; 0010 adds max_workspaces and seeds Custom;
+  // 0012 changes the Team and Business prices.
   const old = billing.match(new RegExp(`\\('${id}', '([^']+)', (\\d+), (\\w+), (\\w+), (\\w+), (\\d+),\\s*array\\[([^\\]]+)\\]`));
   if (old) {
     const ws = accounts.match(new RegExp(`set max_workspaces = (\\d+) where id = '${id}'`));
+    const price = prices.match(new RegExp(`set monthly_price_cents = (\\d+), annual_price_cents = (\\d+) where id = '${id}'`));
     return {
       name: old[1],
-      monthlyCents: Number(old[2]),
-      annualCents: num(old[3]!),
+      monthlyCents: Number(price?.[1] ?? old[2]),
+      annualCents: price ? Number(price[2]) : num(old[3]!),
       maxMembers: num(old[4]!),
       maxItemsPerModule: num(old[5]!),
       storageMb: num(old[6]!),

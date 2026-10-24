@@ -60,8 +60,8 @@ export const PLANS: Plan[] = [
   {
     id: "team",
     name: "Team",
-    monthly: 29,
-    annual: 290,
+    monthly: 35,
+    annual: 350,
     people: "Up to 15 people",
     storage: "10 GB file storage",
     blurb: "For a small office that wants every tool in one place.",
@@ -73,8 +73,8 @@ export const PLANS: Plan[] = [
   {
     id: "business",
     name: "Business",
-    monthly: 79,
-    annual: 790,
+    monthly: 89,
+    annual: 890,
     people: "Up to 50 people",
     storage: "50 GB file storage",
     blurb: "For growing teams that need oversight and faster help.",

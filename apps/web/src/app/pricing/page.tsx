@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Flat pricing per account, not per seat. Free for 1 workspace of up to 3 people, Team at $29/month for 3 workspaces, Business at $79/month for 10, and Custom for unlimited workspaces. 14-day Team trial, no card required.",
+    "Flat pricing per account, not per seat. Free for 1 workspace of up to 3 people, Team at $35/month for 3 workspaces, Business at $89/month for 10, and Custom for unlimited workspaces. 14-day Team trial, no card required.",
 };
 
 type Cell = boolean | string;
@@ -47,7 +47,7 @@ const COMPARISON: { group: string; rows: { label: string; values: [Cell, Cell, C
 const FAQ = [
   {
     q: "What does my plan cover?",
-    a: "One flat price covers your whole account: every workspace you own, and everyone in them, up to the plan’s limits. Team covers 3 workspaces of up to 15 people each for $29 a month, whether you have 9 people or 45.",
+    a: "One flat price covers your whole account: every workspace you own, and everyone in them, up to the plan’s limits. Team covers 3 workspaces of up to 15 people each for $35 a month, whether you have 9 people or 45.",
   },
   {
     q: "How does the free trial work?",
@@ -55,7 +55,7 @@ const FAQ = [
   },
   {
     q: "Is there a discount for paying yearly?",
-    a: "Yes. Annual billing gives you two months free: Team is $290 a year and Business is $790 a year.",
+    a: "Yes. Annual billing gives you two months free: Team is $350 a year and Business is $890 a year.",
   },
   {
     q: "Can we change plans later?",

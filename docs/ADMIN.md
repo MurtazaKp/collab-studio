@@ -75,7 +75,7 @@ Derived from `apps/web/src/components/marketing/plans.ts` and the pricing page.
 
 | | Free | Team | Business | Custom |
 | --- | --- | --- | --- | --- |
-| Price (per account) | $0 | $29/mo or $290/yr | $79/mo or $790/yr | Agreed per customer |
+| Price (per account) | $0 | $35/mo or $350/yr | $89/mo or $890/yr | Agreed per customer |
 | Workspaces the account may own | 1 | 3 | 10 | unlimited |
 | People in each workspace | 3 | 15 | 50 | unlimited |
 | Items per tool, per workspace | 25 | unlimited | unlimited | unlimited |

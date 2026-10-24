@@ -61,6 +61,7 @@ admin's own session and calls `SECURITY DEFINER` RPCs that check
 | `admin_extend_trial(user_id, days)` | Start or extend a trial (1–90 days); a Free account moves to a Team trial |
 | `admin_set_custom_price(user_id, cents)` | Monthly price for a Custom-plan customer (`null` clears it) |
 | `admin_set_notes(user_id, notes)` | Internal notes (max 2000 characters) |
+| `admin_transfer_workspace(workspace_id, new_owner, reason)` | Move a workspace to another account (they join as Owner; the old owner stays as Admin). The console's **Transfer** button finds the account by email. The new owner's plan must have room |
 | `admin_list_audit_log(user_id?, limit)` | The audit log, optionally for one customer |
 
 All of them are revoked from `public` and `anon`. Every change writes a row to
@@ -95,6 +96,22 @@ Derived from `apps/web/src/components/marketing/plans.ts` and the pricing page.
 - **Members of someone else's workspace** use that workspace owner's plan, not
   their own. Joining a workspace never counts toward your own workspace limit.
 
+### Who sees the plan
+
+Only a workspace's **Owner and Admins** see its plan, price, limits and usage
+(`workspace_usage()` refuses everyone else) and which modules are switched off
+(members can read only enabled `workspace_modules` rows). Members and viewers
+get just `workspace_write_state()` (is the workspace writable, and the account
+status) so the app can explain read-only mode. When they hit a limit, they see
+"Ask the workspace owner" instead of the plan name and an Upgrade link.
+
+### Ownership
+
+Workspace owners can only change through `transfer_ownership()` (the owner, to
+an existing member) or `admin_transfer_workspace()` (platform admins). Clients
+can update only a workspace's name, description, icon and colour, and a guard
+trigger requires the new owner to be a member.
+
 ### Upgrades switch tools back on
 
 When a Free account creates a workspace, the tools Free lacks are switched off
@@ -123,6 +140,10 @@ In the database, so clients can't skip it:
 - `enforce_module_plan` on `workspace_modules` — tools outside the plan can't be
   switched on.
 - `enforce_storage_quota` on `attachments` — storage quota.
+- The Storage upload policy (`can_upload_attachment`) — uploads need edit rights,
+  a writable account and room in the quota, counting every file in the
+  workspace's folder (including files never recorded as attachments).
+- `limit_invitation_rate` on `invitations` — 30 invitations an hour per person.
 - `collab.room_access` — returns `viewer` when the workspace is read-only or its
   plan no longer includes the tool, so the collaboration server makes the room
   read-only (including for editors already connected).

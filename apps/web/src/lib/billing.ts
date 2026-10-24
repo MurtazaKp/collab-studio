@@ -80,6 +80,12 @@ export const workspaceUsageSchema = z
 
 export type WorkspaceBilling = z.output<typeof workspaceUsageSchema>;
 
+/** What every member may know: can the workspace be changed, and if not, why. */
+export interface WorkspaceWriteState {
+  writable: boolean;
+  status: SubscriptionStatus;
+}
+
 const MB = 1024 * 1024;
 
 export function formatBytes(bytes: number): string {

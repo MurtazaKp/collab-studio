@@ -12,7 +12,7 @@ import { WorkspaceProvider, useWorkspace, type WorkspaceInfo, type WorkspaceMemb
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import { setLastWorkspaceAction } from "@/app/actions/workspace";
 import { COLOR_HEX } from "@/lib/utils";
-import type { WorkspaceBilling } from "@/lib/billing";
+import type { WorkspaceBilling, WorkspaceWriteState } from "@/lib/billing";
 import { ReadOnlyBanner } from "./read-only-banner";
 import { Sidebar, type SwitcherWorkspace } from "./sidebar";
 import { Logo } from "./wordmark";
@@ -24,6 +24,7 @@ export function WorkspaceShell({
   members,
   modules,
   billing,
+  writeState,
   workspaces,
   children,
 }: {
@@ -33,12 +34,13 @@ export function WorkspaceShell({
   members: WorkspaceMember[];
   modules: WorkspaceModuleInfo[];
   billing: WorkspaceBilling | null;
+  writeState: WorkspaceWriteState | null;
   workspaces: SwitcherWorkspace[];
   children: React.ReactNode;
 }) {
   const collabUser = { id: me.id, name: me.name, color: COLOR_HEX[me.color] ?? COLOR_HEX.iris! };
   return (
-    <WorkspaceProvider workspace={workspace} role={role} me={me} members={members} modules={modules} billing={billing}>
+    <WorkspaceProvider workspace={workspace} role={role} me={me} members={members} modules={modules} billing={billing} writeState={writeState}>
       <WorkspacePresenceProvider workspaceId={workspace.id} me={collabUser}>
         <CollabRoot user={collabUser}>
           <MembershipWatcher />

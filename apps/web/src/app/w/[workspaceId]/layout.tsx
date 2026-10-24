@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { isModuleType, isRole } from "@collabverse/shared";
+import { canManage, isModuleType, isRole } from "@collabverse/shared";
 import { getMyWorkspaces, getProfile, getWorkspaceAccess } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getWorkspaceBilling } from "@/lib/billing-server";
+import { getWorkspaceBilling, getWorkspaceWriteState } from "@/lib/billing-server";
 import { WorkspaceShell } from "@/components/shell/workspace-shell";
 import type { WorkspaceMember, WorkspaceModuleInfo } from "@/lib/workspace-context";
 
@@ -22,11 +22,14 @@ export default async function WorkspaceLayout({
   const { workspaceId } = await params;
   const access = await getWorkspaceAccess(workspaceId);
   const supabase = await createServerSupabase();
-  const [profile, workspaces, { data: memberRows }, billing] = await Promise.all([
+  // The plan (price, limits, usage) is for owners and admins; every member only
+  // learns whether the workspace can be changed.
+  const [profile, workspaces, { data: memberRows }, billing, writeState] = await Promise.all([
     getProfile(),
     getMyWorkspaces(),
     supabase.rpc("workspace_member_list", { p_workspace_id: workspaceId }),
-    getWorkspaceBilling(workspaceId),
+    canManage(access.role) ? getWorkspaceBilling(workspaceId) : Promise.resolve(null),
+    getWorkspaceWriteState(workspaceId),
   ]);
 
   const members: WorkspaceMember[] = (memberRows ?? []).map((m) => ({
@@ -59,6 +62,7 @@ export default async function WorkspaceLayout({
       members={members}
       modules={modules}
       billing={billing}
+      writeState={writeState}
       workspaces={workspaces.map((w) => ({ ...w.workspace, role: w.role }))}
     >
       {children}

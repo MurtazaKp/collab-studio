@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRightLeft, BadgeDollarSign, CalendarClock, CreditCard, NotebookPen, Power, ShieldCheck, ShieldOff, type LucideIcon } from "lucide-react";
+import { ArrowRightLeft, BadgeDollarSign, KeyRound, CalendarClock, CreditCard, NotebookPen, Power, ShieldCheck, ShieldOff, type LucideIcon } from "lucide-react";
 import { describeAuditEntry, type AuditAction, type AuditEntry } from "@/lib/admin-format";
 import { cn, timeAgo } from "@/lib/utils";
 
@@ -9,6 +9,7 @@ const ICONS: Record<AuditAction, LucideIcon> = {
   trial_extended: CalendarClock,
   notes_updated: NotebookPen,
   custom_price_set: BadgeDollarSign,
+  ownership_transferred: KeyRound,
   admin_granted: ShieldCheck,
   admin_revoked: ShieldOff,
   billing_synced: CreditCard,

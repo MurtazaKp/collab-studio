@@ -95,7 +95,8 @@ export function GeneralSettings() {
 
   return (
     <>
-      <PlanUsageCard billing={billing} />
+      {/* The plan and the module switches are for owners and admins only. */}
+      {canManage ? <PlanUsageCard billing={billing} /> : null}
 
       <Card title="Workspace" description={canManage ? "Name, description and appearance." : "Only owners and admins can change these."}>
         <form
@@ -148,15 +149,17 @@ export function GeneralSettings() {
         </form>
       </Card>
 
-      <Card title="Modules" description={canManage ? "Enabled modules show up in the sidebar and dashboard for everyone. Disabling keeps the data." : "Only owners and admins can change modules."}>
-        <ul className="divide-y divide-border">
-          {MODULE_TYPES.map((m) => {
-            const mod = modules.find((x) => x.type === m);
-            const onPlan = !billing || billing.modules.includes(m);
-            return <ModuleRow key={m} type={m} enabled={Boolean(mod?.enabled)} editable={canManage} onPlan={onPlan} />;
-          })}
-        </ul>
-      </Card>
+      {canManage ? (
+        <Card title="Modules" description="Enabled modules show up in the sidebar and dashboard for everyone. Disabling keeps the data.">
+          <ul className="divide-y divide-border">
+            {MODULE_TYPES.map((m) => {
+              const mod = modules.find((x) => x.type === m);
+              const onPlan = !billing || billing.modules.includes(m);
+              return <ModuleRow key={m} type={m} enabled={Boolean(mod?.enabled)} editable onPlan={onPlan} />;
+            })}
+          </ul>
+        </Card>
+      ) : null}
 
       {role === "owner" ? (
         <Card title="Delete workspace" description="Permanently deletes the workspace, all its content and memberships. This cannot be undone." tone="danger">

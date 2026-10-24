@@ -82,6 +82,7 @@ export const AUDIT_ACTIONS = [
   "trial_extended",
   "notes_updated",
   "custom_price_set",
+  "ownership_transferred",
   "admin_granted",
   "admin_revoked",
   "billing_synced",
@@ -151,6 +152,10 @@ export function describeAuditEntry(entry: Pick<AuditEntry, "action" | "details">
     }
     case "notes_updated":
       return { title: "Notes updated", detail: typeof d.after === "string" && d.after ? `“${d.after.slice(0, 120)}”` : "Notes cleared" };
+    case "ownership_transferred": {
+      const reason = typeof d.reason === "string" && d.reason ? ` · “${d.reason}”` : "";
+      return { title: "Workspace transferred", detail: `From ${String(d.from_email || "previous owner")}${reason}` };
+    }
     case "custom_price_set":
       return { title: "Custom price set", detail: `${price(d.from)} → ${price(d.to)}` };
     case "admin_granted":

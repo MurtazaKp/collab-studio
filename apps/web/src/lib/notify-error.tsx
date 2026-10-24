@@ -6,6 +6,24 @@ import { PLAN_ERROR_TITLES, planErrorKind, planErrorOffersUpgrade } from "@/lib/
 export const UPGRADE_HREF = "/pricing";
 
 /**
+ * Whether the person looking at the app may see the workspace's plan (its
+ * owner and admins). Members and viewers get a neutral message without the
+ * plan's name or an Upgrade link. Set by the workspace provider; defaults to
+ * true outside a workspace (onboarding, the workspaces page), where the plan
+ * in question is the user's own.
+ */
+let planAudience = true;
+export function setPlanAudience(canSeePlan: boolean): void {
+  planAudience = canSeePlan;
+}
+
+const MEMBER_MESSAGES: Record<string, string> = {
+  inactive: "This workspace is read-only right now. Ask the workspace owner for details.",
+  module: "This tool isn't available in this workspace. Ask the workspace owner.",
+};
+const MEMBER_DEFAULT = "This workspace has reached a limit. Ask the workspace owner or an admin.";
+
+/**
  * For dialogs that show their own inline error: toasts plan limits (with the
  * Upgrade action) and returns true so the caller can close the dialog instead.
  */
@@ -24,6 +42,10 @@ export function toastError(err: unknown, fallback?: string): boolean {
   if (!kind) {
     toast.error(message);
     return false;
+  }
+  if (!planAudience) {
+    toast.error(PLAN_ERROR_TITLES[kind], { id: `plan-${kind}`, description: MEMBER_MESSAGES[kind] ?? MEMBER_DEFAULT, duration: 8_000 });
+    return true;
   }
   toast.error(PLAN_ERROR_TITLES[kind], {
     id: `plan-${kind}`,

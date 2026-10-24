@@ -55,6 +55,7 @@ create table storage.objects (
   name text not null,
   owner_id text,
   created_at timestamptz default now(),
+  metadata jsonb,
   unique (bucket_id, name)
 );
 create or replace function storage.foldername(name text) returns text[] language plpgsql immutable as $$

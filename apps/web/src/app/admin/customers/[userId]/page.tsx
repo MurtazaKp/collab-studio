@@ -8,6 +8,7 @@ import { planById } from "@/components/marketing/plans";
 import { AuditList } from "@/components/admin/audit-list";
 import { PlanBadge, StatusBadge } from "@/components/admin/badges";
 import { CustomerControls } from "@/components/admin/customer-controls";
+import { TransferWorkspaceButton } from "@/components/admin/transfer-workspace";
 import { Avatar } from "@/components/ui/misc";
 import { ModuleIcon } from "@/components/ui/module-icon";
 import { UsageMeter } from "@/components/ui/usage-meter";
@@ -169,6 +170,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ userI
                           </div>
                         ) : null}
                       </dl>
+                      <TransferWorkspaceButton workspaceId={w.workspace_id} workspaceName={w.name} />
                     </li>
                   );
                 })}

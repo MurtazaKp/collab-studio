@@ -94,7 +94,7 @@ export type Database = {
           id: string;
           actor_id: string | null;
           actor_email: string;
-          action: "plan_changed" | "status_changed" | "trial_extended" | "notes_updated" | "custom_price_set" | "admin_granted" | "admin_revoked" | "billing_synced";
+          action: "plan_changed" | "status_changed" | "trial_extended" | "notes_updated" | "custom_price_set" | "ownership_transferred" | "admin_granted" | "admin_revoked" | "billing_synced";
           workspace_id: string | null;
           workspace_name: string;
           details: Json;
@@ -106,7 +106,7 @@ export type Database = {
           id?: string;
           actor_id?: string | null;
           actor_email?: string;
-          action: "plan_changed" | "status_changed" | "trial_extended" | "notes_updated" | "custom_price_set" | "admin_granted" | "admin_revoked" | "billing_synced";
+          action: "plan_changed" | "status_changed" | "trial_extended" | "notes_updated" | "custom_price_set" | "ownership_transferred" | "admin_granted" | "admin_revoked" | "billing_synced";
           workspace_id?: string | null;
           workspace_name?: string;
           details?: Json;
@@ -118,7 +118,7 @@ export type Database = {
           id?: string;
           actor_id?: string | null;
           actor_email?: string;
-          action?: "plan_changed" | "status_changed" | "trial_extended" | "notes_updated" | "custom_price_set" | "admin_granted" | "admin_revoked" | "billing_synced";
+          action?: "plan_changed" | "status_changed" | "trial_extended" | "notes_updated" | "custom_price_set" | "ownership_transferred" | "admin_granted" | "admin_revoked" | "billing_synced";
           workspace_id?: string | null;
           workspace_name?: string;
           details?: Json;
@@ -1215,9 +1215,11 @@ export type Database = {
       admin_set_notes: { Args: { p_user_id: string; p_notes: string }; Returns: undefined };
       admin_set_plan: { Args: { p_user_id: string; p_plan_id: string }; Returns: undefined };
       admin_set_status: { Args: { p_user_id: string; p_status: string; p_reason?: string }; Returns: undefined };
+      admin_transfer_workspace: { Args: { p_workspace_id: string; p_new_owner: string; p_reason?: string }; Returns: undefined };
       admin_workspace_members: { Args: { p_workspace_id: string }; Returns: { user_id: string; display_name: string; email: string; role: string; joined_at: string }[] };
       can_edit_workspace: { Args: { p_workspace_id: string }; Returns: boolean };
       can_manage_workspace: { Args: { p_workspace_id: string }; Returns: boolean };
+      can_upload_attachment: { Args: { p_workspace_id: string }; Returns: boolean };
       channel_unread_counts: { Args: { p_workspace_id: string }; Returns: { channel_id: string; unread: number }[] };
       create_board: { Args: { p_workspace_id: string; p_title: string }; Returns: string };
       create_invitation: { Args: { p_workspace_id: string; p_email: string; p_role: string; p_ttl_hours?: number }; Returns: { invitation_id: string; token: string; expires_at: string }[] };
@@ -1242,6 +1244,7 @@ export type Database = {
       workspace_member_list: { Args: { p_workspace_id: string }; Returns: { user_id: string; display_name: string; avatar_color: string; role: string; joined_at: string; email: string }[] };
       workspace_role: { Args: { p_workspace_id: string }; Returns: string };
       workspace_usage: { Args: { p_workspace_id: string }; Returns: { plan_id: string; plan_name: string; subscribed_plan_id: string; status: string; trial_ends_at: string; trial_expired: boolean; current_period_end: string; writable: boolean; monthly_price_cents: number; max_members: number; member_count: number; max_items_per_module: number; storage_mb: number; storage_bytes: number; modules: string[]; usage: Json; max_workspaces: number; owner_workspace_count: number; owner_name: string; is_owner: boolean }[] };
+      workspace_write_state: { Args: { p_workspace_id: string }; Returns: { writable: boolean; status: string }[] };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

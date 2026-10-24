@@ -1,9 +1,10 @@
 "use client";
 
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { canEdit, canManage, type ModuleType, type Role } from "@collabverse/shared";
 import { COLOR_HEX } from "@/lib/utils";
-import type { WorkspaceBilling } from "@/lib/billing";
+import { setPlanAudience } from "@/lib/notify-error";
+import type { SubscriptionStatus, WorkspaceBilling, WorkspaceWriteState } from "@/lib/billing";
 
 export interface WorkspaceMember {
   userId: string;
@@ -34,9 +35,11 @@ export interface WorkspaceContextValue {
   /** Members and above, unless the workspace is read-only (suspended or canceled). */
   canEdit: boolean;
   canManage: boolean;
-  /** Plan, status and usage; null if it couldn't be loaded. */
+  /** Plan, status and usage; owners and admins only (null for everyone else, or if it couldn't be loaded). */
   billing: WorkspaceBilling | null;
   readOnly: boolean;
+  /** The owner's account status, for explaining read-only; known to every member. */
+  accountStatus: SubscriptionStatus | null;
   me: { id: string; name: string; color: string; hex: string };
   members: WorkspaceMember[];
   modules: WorkspaceModuleInfo[];
@@ -54,6 +57,7 @@ export function WorkspaceProvider({
   members,
   modules,
   billing = null,
+  writeState = null,
   children,
 }: {
   workspace: WorkspaceInfo;
@@ -62,11 +66,12 @@ export function WorkspaceProvider({
   members: WorkspaceMember[];
   modules: WorkspaceModuleInfo[];
   billing?: WorkspaceBilling | null;
+  writeState?: WorkspaceWriteState | null;
   children: ReactNode;
 }) {
   const value = useMemo<WorkspaceContextValue>(() => {
     const byId = new Map(members.map((m) => [m.userId, m]));
-    const readOnly = billing ? !billing.writable : false;
+    const readOnly = writeState ? !writeState.writable : billing ? !billing.writable : false;
     return {
       workspace,
       role,
@@ -74,6 +79,7 @@ export function WorkspaceProvider({
       canManage: canManage(role),
       billing,
       readOnly,
+      accountStatus: writeState?.status ?? billing?.status ?? null,
       me: { ...me, hex: COLOR_HEX[me.color] ?? COLOR_HEX.iris! },
       members,
       modules,
@@ -81,7 +87,12 @@ export function WorkspaceProvider({
       member: (id) => (id ? byId.get(id) : undefined),
       href: (path = "") => `/w/${workspace.id}${path ? `/${path.replace(/^\//, "")}` : ""}`,
     };
-  }, [workspace, role, me, members, modules, billing]);
+  }, [workspace, role, me, members, modules, billing, writeState]);
+  // Plan details in error messages are for owners and admins only.
+  useEffect(() => {
+    setPlanAudience(canManage(role));
+    return () => setPlanAudience(true);
+  }, [role]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

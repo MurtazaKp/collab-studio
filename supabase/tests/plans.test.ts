@@ -105,11 +105,11 @@ describe("account plans", () => {
     expect((await account(owner))!.plan_id).toBe("free");
   });
 
-  it("a member of someone else's workspace sees the owner's plan, not their own", async () => {
+  it("an admin of someone else's workspace sees the owner's plan, not their own", async () => {
     const { ws } = await customer("Host");
     await setPlan(db, ws, "business");
     const guest = await createUser(db, "Guest");
-    await addMember(db, ws, guest, "member");
+    await addMember(db, ws, guest, "admin");
     const usage = await asUser(db, guest, (tx) => tx.query<{ plan_id: string; is_owner: boolean }>(`select * from workspace_usage($1)`, [ws]));
     expect(usage.rows[0]).toMatchObject({ plan_id: "business", is_owner: false });
     expect((await account(guest))!.plan_id).toBe("free");

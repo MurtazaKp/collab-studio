@@ -95,3 +95,28 @@ export async function adminSetCustomPriceAction(input: { userId: string; dollars
   refresh();
   return ok();
 }
+
+const transferSchema = z.object({
+  workspaceId: uuidSchema,
+  email: z.string().trim().toLowerCase().email().max(254),
+  reason: z.string().trim().max(500).default(""),
+});
+
+/** Moves a workspace to the account with this email (they join as owner). */
+export async function adminTransferWorkspaceAction(input: { workspaceId: string; email: string; reason?: string }): Promise<ActionResult> {
+  const parsed = transferSchema.safeParse(input);
+  if (!parsed.success) return fail("Enter the new owner's email address.");
+  const supabase = await client();
+  const { data, error: findError } = await supabase.rpc("admin_list_customers", { p_search: parsed.data.email, p_limit: 20, p_offset: 0 });
+  if (findError) return fail(findError, "Couldn't look up that account.");
+  const match = (data ?? []).find((c) => c.email.toLowerCase() === parsed.data.email);
+  if (!match) return fail("No account uses that email. They need to sign up first.");
+  const { error } = await supabase.rpc("admin_transfer_workspace", {
+    p_workspace_id: parsed.data.workspaceId,
+    p_new_owner: match.user_id,
+    p_reason: parsed.data.reason,
+  });
+  if (error) return fail(error, "Couldn't transfer the workspace.");
+  refresh();
+  return ok();
+}

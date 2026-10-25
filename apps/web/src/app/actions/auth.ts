@@ -1,11 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { z } from "zod";
 import { profileInputSchema } from "@collabverse/shared";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { publicEnv, safeNextPath } from "@/lib/env";
+import { siteUrl } from "@/lib/site-url";
 import { errorMessage } from "@/lib/utils";
 
 export interface FormState {
@@ -16,16 +16,6 @@ export interface FormState {
 
 const emailSchema = z.email("Enter a valid email address").trim().toLowerCase().max(254);
 const passwordSchema = z.string().min(8, "Use at least 8 characters").max(128);
-
-async function siteUrl(): Promise<string> {
-  // Prefer the configured URL so email links can't be pointed at another host
-  // via a spoofed Host header.
-  if (process.env.NEXT_PUBLIC_SITE_URL) return publicEnv.siteUrl.replace(/\/$/, "");
-  const h = await headers();
-  const host = h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
 
 export async function signInAction(_: FormState, formData: FormData): Promise<FormState> {
   const parsed = z

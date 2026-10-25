@@ -13,7 +13,7 @@ import {
   workspaceInputSchema,
 } from "@collabverse/shared";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { publicEnv } from "@/lib/env";
+import { siteUrl } from "@/lib/site-url";
 import { errorMessage } from "@/lib/utils";
 import type { Json } from "@/lib/supabase/database.types";
 import { DASHBOARD_SIZES } from "@/lib/dashboard";
@@ -170,7 +170,7 @@ export async function inviteMemberAction(input: { workspaceId: string; email: st
   const row = data?.[0];
   if (error || !row) return fail(error, "Couldn't create the invitation.");
   revalidatePath(`/w/${parsed.data.workspaceId}/settings/members`);
-  return ok({ link: `${publicEnv.siteUrl.replace(/\/$/, "")}/invite/${row.token}`, expiresAt: row.expires_at });
+  return ok({ link: `${await siteUrl()}/invite/${row.token}`, expiresAt: row.expires_at });
 }
 
 export async function revokeInvitationAction(workspaceId: string, invitationId: string): Promise<ActionResult> {

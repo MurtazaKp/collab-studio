@@ -29,6 +29,9 @@ const EMPTY_COPY: Record<ItemModule, string> = {
   code: "Share a Monaco editor with syntax highlighting. Code is never executed.",
   playlist: "Collect tracks and links, then order them as a group.",
   shopping: "Shared to-do lists with assignees and check-offs. Everyone sees progress instantly.",
+  calendar: "Plan meetings, deadlines and events together. Attendees are notified when you add them.",
+  polls: "Ask a question, let everyone vote, and watch the results come in live.",
+  sheets: "Spreadsheets everyone can edit at once, with live updates and simple formulas.",
 };
 
 export function ItemIndex({ module, initial }: { module: ItemModule; initial: ItemRow[] }) {

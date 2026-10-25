@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toastError } from "@/lib/notify-error";
 import { Check, Hash } from "lucide-react";
-import { roomName, sortByPosition } from "@collabverse/shared";
+import { MODULES, roomName, sortByPosition } from "@collabverse/shared";
 import { objectsMap, readWhiteboard, type WbObject } from "@collabverse/shared/whiteboard";
 import { nodesMap, normalizeMindmap, readMindmap } from "@collabverse/shared/mindmap";
 import { useWorkspace } from "@/lib/workspace-context";
@@ -46,9 +46,8 @@ function focusItem(items: ItemRow[], pinnedId: string | null): ItemRow | undefin
 
 function CreateLink({ module, label }: { module: ItemModule; label: string }) {
   const { href, canEdit } = useWorkspace();
-  const seg = { docs: "docs", whiteboard: "whiteboard", mindmap: "mindmap", code: "code", kanban: "kanban", playlist: "playlists", shopping: "shopping" }[module];
   return canEdit ? (
-    <Link href={href(seg)} className="text-[12.5px] font-medium text-accent hover:underline">
+    <Link href={href(MODULES[module].segment)} className="text-[12.5px] font-medium text-accent hover:underline">
       {label}
     </Link>
   ) : null;
@@ -438,3 +437,46 @@ export function ShoppingWidget({ controls, items: initial, pinnedId, onPin }: Wi
     </WidgetFrame>
   );
 }
+
+// ---------------------------------------------------------------- Calendar, Polls, Sheets
+
+const RECENT_EMPTY: Record<"calendar" | "polls" | "sheets", { none: string; create: string }> = {
+  calendar: { none: "No calendars yet.", create: "Create a calendar" },
+  polls: { none: "No polls yet.", create: "Ask the team something" },
+  sheets: { none: "No sheets yet.", create: "Start a sheet" },
+};
+
+/** Recent items of a module, newest activity first. */
+function RecentItemsWidget({ module, controls, items: initial }: WidgetProps & { module: "calendar" | "polls" | "sheets" }) {
+  const { href, member } = useWorkspace();
+  const items = useModuleItems(module, initial);
+  const seg = MODULES[module].segment;
+  return (
+    <WidgetFrame type={module} href={href(seg)} controls={controls}>
+      {items.length === 0 ? (
+        <WidgetEmpty action={<CreateLink module={module} label={RECENT_EMPTY[module].create} />}>{RECENT_EMPTY[module].none}</WidgetEmpty>
+      ) : (
+        <ul className="flex flex-col divide-y divide-border">
+          {items.slice(0, controls.size === "sm" ? 3 : 5).map((it) => {
+            const by = member(it.created_by);
+            return (
+              <li key={it.id}>
+                <Link href={href(`${seg}/${it.id}`)} className="-mx-2 block rounded-lg px-2 py-2.5 transition-colors hover:bg-surface-2">
+                  <p className="truncate text-[13.5px] font-medium text-text">{it.title}</p>
+                  <p className="mt-0.5 text-[11.5px] text-muted">
+                    {by ? `${by.name} · ` : ""}
+                    {timeAgo(it.updated_at)}
+                  </p>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </WidgetFrame>
+  );
+}
+
+export const CalendarWidget = (p: WidgetProps) => <RecentItemsWidget module="calendar" {...p} />;
+export const PollsWidget = (p: WidgetProps) => <RecentItemsWidget module="polls" {...p} />;
+export const SheetsWidget = (p: WidgetProps) => <RecentItemsWidget module="sheets" {...p} />;

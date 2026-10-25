@@ -57,7 +57,7 @@ describe("create_workspace", () => {
   it("creates owner membership, all modules and #general atomically", async () => {
     await asUser(db, owner, async (tx) => {
       expect(await count(tx, `select 1 from workspace_members where workspace_id = $1 and role = 'owner'`, [ws])).toBe(1);
-      expect(await count(tx, `select 1 from workspace_modules where workspace_id = $1`, [ws])).toBe(8);
+      expect(await count(tx, `select 1 from workspace_modules where workspace_id = $1`, [ws])).toBe(11);
       expect(await count(tx, `select 1 from channels where workspace_id = $1 and name = 'general'`, [ws])).toBe(1);
     });
   });

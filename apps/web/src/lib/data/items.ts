@@ -3,11 +3,21 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Tables } from "@/lib/supabase/database.types";
 
 /**
- * Typed data access for the "titled item" tables that back seven modules.
+ * Typed data access for the "titled item" tables that back every module but Chat.
  * Every call runs with the caller's session, so RLS decides what is allowed;
  * inputs are validated here first for clear errors.
  */
-export type ItemTable = "documents" | "whiteboards" | "mindmaps" | "code_projects" | "boards" | "playlists" | "shopping_lists";
+export type ItemTable =
+  | "documents"
+  | "whiteboards"
+  | "mindmaps"
+  | "code_projects"
+  | "boards"
+  | "playlists"
+  | "shopping_lists"
+  | "calendars"
+  | "polls"
+  | "sheets";
 
 export type ItemModule = Exclude<ModuleType, "chat">;
 
@@ -19,6 +29,9 @@ export const ITEM_TABLE: Record<ItemModule, ItemTable> = {
   kanban: "boards",
   playlist: "playlists",
   shopping: "shopping_lists",
+  calendar: "calendars",
+  polls: "polls",
+  sheets: "sheets",
 };
 
 export const ROOM_KIND: Partial<Record<ItemModule, RoomKind>> = {

@@ -1,9 +1,19 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import type { PGlite } from "@electric-sql/pglite";
-import { addMember, asUser, count, createTestDb, createUser, createWorkspace, expectError, setAccountPlan, type TestUser } from "./support/db";
+import { addMember, asUser, count, createTestDb, createUser as createAccount, createWorkspace, expectError, setAccountPlan, type TestUser } from "./support/db";
 
 // Holes found by the 2026-10-24 break test, fixed in 20261024000011.
 let db: PGlite;
+
+/**
+ * New accounts start on a 14-day Team trial (20261024000014). These tests
+ * exercise the Free plan's limits, so their accounts start on Free.
+ */
+async function createUser(database: PGlite, name: string): Promise<TestUser> {
+  const user = await createAccount(database, name);
+  await setAccountPlan(database, user, "free");
+  return user;
+}
 let staff: TestUser;
 
 async function ownerOf(ws: string): Promise<string> {
@@ -160,8 +170,8 @@ describe("what members can see", () => {
 
   it("members see only the modules that are switched on", async () => {
     const seen = (who: TestUser) => asUser(db, who, (tx) => count(tx, `select 1 from workspace_modules where workspace_id = $1`, [ws]));
-    expect(await seen(owner)).toBe(8);
-    expect(await seen(admin)).toBe(8);
+    expect(await seen(owner)).toBe(11);
+    expect(await seen(admin)).toBe(11);
     expect(await seen(member)).toBe(4);
   });
 });

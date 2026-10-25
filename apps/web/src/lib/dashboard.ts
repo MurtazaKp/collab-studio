@@ -17,6 +17,9 @@ const DEFAULT_SIZE: Record<ModuleType, DashboardSize> = {
   code: "sm",
   playlist: "sm",
   shopping: "sm",
+  calendar: "md",
+  polls: "sm",
+  sheets: "sm",
 };
 
 /**

@@ -31,7 +31,7 @@ describe("workspaceUsageSchema", () => {
     // The plan is the workspace owner's.
     expect(b).toMatchObject({ maxWorkspaces: 1, ownerWorkspaceCount: 1, ownerName: "Ada", isOwner: false });
     expect(b.modules).toEqual(["docs", "kanban", "chat", "shopping"]);
-    expect(b.usage).toEqual({ docs: 4, whiteboard: 0, kanban: 0, chat: 1, mindmap: 0, code: 0, playlist: 0, shopping: 0 });
+    expect(b.usage).toEqual({ docs: 4, whiteboard: 0, kanban: 0, chat: 1, mindmap: 0, code: 0, playlist: 0, shopping: 0, calendar: 0, polls: 0, sheets: 0 });
   });
 
   it("keeps unlimited limits as null and rejects unknown statuses", () => {

@@ -9,6 +9,13 @@ const read = (file: string) => readFileSync(fileURLToPath(new URL(`../../../../s
 const billing = read("20261023000009_platform_admin_billing.sql");
 const accounts = read("20261023000010_account_plans.sql");
 const prices = read("20261024000012_price_update.sql");
+const newModules = read("20261024000015_calendar_polls_sheets.sql");
+
+/** 0015 gives some plans the full module list (Calendar, Polls, Sheets). */
+function modulesOverride(id: string): ReturnType<typeof modules> | null {
+  const m = /set modules = array\[([^\]]+)\]\s*where id in \(([^)]+)\)/.exec(newModules);
+  return m && modules(m[2]!).includes(id) ? modules(m[1]!) : null;
+}
 
 const num = (v: string) => (v === "null" ? null : Number(v));
 const modules = (list: string) => [...list.matchAll(/'(\w+)'/g)].map((x) => x[1]);
@@ -28,7 +35,7 @@ function seededPlan(id: string) {
       maxItemsPerModule: num(old[5]!),
       storageMb: num(old[6]!),
       maxWorkspaces: ws ? Number(ws[1]) : null,
-      modules: modules(old[7]!),
+      modules: modulesOverride(id) ?? modules(old[7]!),
     };
   }
   const added = accounts.match(
@@ -43,7 +50,7 @@ function seededPlan(id: string) {
     maxItemsPerModule: num(added[5]!),
     storageMb: num(added[6]!),
     maxWorkspaces: num(added[7]!),
-    modules: modules(added[8]!),
+    modules: modulesOverride(id) ?? modules(added[8]!),
   };
 }
 

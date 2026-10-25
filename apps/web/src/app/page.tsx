@@ -7,12 +7,19 @@ import { DASHBOARD_HREF, SiteHeader } from "@/components/marketing/site-header";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { ProductPreview } from "@/components/marketing/product-preview";
 import { ctaClass } from "@/components/marketing/cta";
-import { PLANS, TRIAL_NOTE } from "@/components/marketing/plans";
+import { FREE_MODULES, PLANS, TRIAL_NOTE } from "@/components/marketing/plans";
+import { NEW_TOOLS, NewTools } from "@/components/marketing/new-tools";
+import { Roadmap } from "@/components/marketing/roadmap";
+
+const TOOL_COUNT = MODULE_TYPES.length;
+const NEW_TYPES = new Set(NEW_TOOLS.map((t) => t.type));
+const FREE_LABELS = FREE_MODULES.map((t) => MODULES[t].label);
+const FREE_LIST = `${FREE_LABELS.slice(0, -1).join(", ")} and ${FREE_LABELS[FREE_LABELS.length - 1]}`;
 
 const REASONS = [
   {
     title: "Simple on purpose",
-    body: "Eight focused tools instead of a hundred settings. Create a workspace, invite your team and start working in minutes, with no configuration maze to get through first.",
+    body: `${TOOL_COUNT} focused tools instead of a hundred settings. Create a workspace, invite your team and start working in minutes, with no configuration maze to get through first.`,
   },
   {
     title: "Live by default",
@@ -50,8 +57,8 @@ export default async function LandingPage() {
               The whole office, on the same page.
             </h1>
             <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-text-2">
-              CollabVerse is one workspace for docs, whiteboards, boards, chat, mindmaps, shared code, playlists and
-              to-do lists. Everything is live: you see who&apos;s here, where they&apos;re working and what
+              CollabVerse is one workspace for docs, spreadsheets, whiteboards, kanban boards, chat, calendars,
+              polls, mindmaps, shared code, playlists and to-do lists. Everything is live: you see who&apos;s here, where they&apos;re working and what
               they change, as it happens.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -77,22 +84,33 @@ export default async function LandingPage() {
             <div className="lg:sticky lg:top-10 lg:self-start">
               <p className="font-mono text-[12px] text-muted">01 / The workspace</p>
               <h2 id="tools-title" className="mt-3 font-display text-[36px] leading-[1.08] tracking-tight text-text sm:text-[44px]">
-                Eight tools. One login. Nothing to wire together.
+                {TOOL_COUNT} tools. One login. Nothing to wire together.
               </h2>
               <p className="mt-4 max-w-md text-[15px] leading-relaxed text-text-2">
                 The things a small office actually uses every week, built to work the same way and to share the
                 same people, roles and presence.
+              </p>
+              <p className="mt-4 max-w-md text-[13.5px] leading-relaxed text-text-2">
+                Free includes {FREE_LIST}. Team, Business and Custom include all {TOOL_COUNT}, and every new
+                account starts with a 14-day trial of the full set.
               </p>
             </div>
             <ul className="divide-y divide-border border-y border-border">
               {MODULE_TYPES.map((t, i) => (
                 <li key={t} className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 py-5 sm:grid-cols-[3rem_auto_minmax(0,1fr)]">
                   <span aria-hidden className="hidden pt-1 font-mono text-[12px] text-muted sm:block">
-                    0{i + 1}
+                    {String(i + 1).padStart(2, "0")}
                   </span>
                   <ModuleIcon type={t} tile />
                   <div>
-                    <h3 className="text-[16px] font-semibold text-text">{MODULES[t].label}</h3>
+                    <h3 className="flex flex-wrap items-center gap-2 text-[16px] font-semibold text-text">
+                      {MODULES[t].label}
+                      {NEW_TYPES.has(t) ? (
+                        <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent">
+                          New
+                        </span>
+                      ) : null}
+                    </h3>
                     <p className="mt-1 text-[14px] leading-relaxed text-text-2">{MODULES[t].description}</p>
                   </div>
                 </li>
@@ -101,10 +119,42 @@ export default async function LandingPage() {
           </div>
         </section>
 
+        {/* New tools */}
+        <section aria-labelledby="new-title" className="mx-auto mt-24 max-w-6xl px-4 sm:px-6 lg:mt-32">
+          <p className="font-mono text-[12px] text-muted">02 / Just added</p>
+          <h2 id="new-title" className="mt-3 max-w-2xl font-display text-[36px] leading-[1.08] tracking-tight text-text sm:text-[44px]">
+            Plan it, decide it, count it. Without leaving the workspace.
+          </h2>
+          <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-text-2">
+            Calendar, Polls and Sheets are the newest tools in CollabVerse. They share the same people, roles and
+            live presence as everything else.
+          </p>
+          <div className="mt-10">
+            <NewTools />
+          </div>
+        </section>
+
+        {/* Roadmap */}
+        <section aria-labelledby="roadmap-title" className="mx-auto mt-24 max-w-6xl px-4 sm:px-6 lg:mt-32">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-16">
+            <div>
+              <p className="font-mono text-[12px] text-muted">03 / More tools on the way</p>
+              <h2 id="roadmap-title" className="mt-3 font-display text-[32px] leading-[1.1] tracking-tight text-text sm:text-[40px]">
+                We&apos;re not done adding tools.
+              </h2>
+              <p className="mt-4 max-w-md text-[15px] leading-relaxed text-text-2">
+                These are on our roadmap. They aren&apos;t available yet, and we&apos;ll only announce them once
+                they&apos;re ready to use.
+              </p>
+            </div>
+            <Roadmap />
+          </div>
+        </section>
+
         {/* Why */}
         <section aria-labelledby="why-title" className="mt-24 border-y border-border bg-surface lg:mt-32">
           <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-24">
-            <p className="font-mono text-[12px] text-muted">02 / Why CollabVerse</p>
+            <p className="font-mono text-[12px] text-muted">04 / Why CollabVerse</p>
             <h2 id="why-title" className="mt-3 max-w-2xl font-display text-[36px] leading-[1.08] tracking-tight text-text sm:text-[44px]">
               Less to learn than the big all-in-one suites. More happening in real time.
             </h2>
@@ -126,7 +176,7 @@ export default async function LandingPage() {
         <section aria-labelledby="price-title" className="mx-auto mt-24 max-w-6xl px-4 sm:px-6 lg:mt-32">
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
             <div>
-              <p className="font-mono text-[12px] text-muted">03 / Pricing</p>
+              <p className="font-mono text-[12px] text-muted">05 / Pricing</p>
               <h2 id="price-title" className="mt-3 font-display text-[36px] leading-[1.08] tracking-tight text-text sm:text-[44px]">
                 One price for the workspace, not for every person in it.
               </h2>
@@ -162,10 +212,10 @@ export default async function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/signup" className={ctaClass("primary", "lg", "mt-7 w-full")}>
-                Start free trial
+              <Link href={signedIn ? DASHBOARD_HREF : "/signup"} className={ctaClass("primary", "lg", "mt-7 w-full")}>
+                {signedIn ? "Go to your dashboard" : "Start free trial"}
               </Link>
-              <p className="mt-3 text-center text-[12.5px] text-text-2">{TRIAL_NOTE}</p>
+              {signedIn ? null : <p className="mt-3 text-center text-[12.5px] text-text-2">{TRIAL_NOTE}</p>}
             </div>
           </div>
         </section>

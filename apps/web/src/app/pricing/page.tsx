@@ -23,7 +23,7 @@ const COMPARISON: { group: string; rows: { label: string; values: [Cell, Cell, C
       { label: "Workspaces", values: ["1", "3", "10", "Unlimited"] },
       { label: "People in each workspace", values: ["Up to 3", "Up to 15", "Up to 50", "Unlimited"] },
       { label: "File storage per workspace", values: ["100 MB", "10 GB", "50 GB", "Unlimited"] },
-      { label: "All 8 tools", values: [false, true, true, true] },
+      { label: "All 11 tools", values: [false, true, true, true] },
     ],
   },
   {

@@ -5,7 +5,7 @@ import {
   asUser,
   count,
   createTestDb,
-  createUser,
+  createUser as createAccount,
   createWorkspace,
   expectError,
   setAccountPlan,
@@ -14,6 +14,16 @@ import {
 } from "./support/db";
 
 let db: PGlite;
+
+/**
+ * New accounts start on a 14-day Team trial (20261024000014). These tests
+ * exercise the Free plan's limits, so their accounts start on Free.
+ */
+async function createUser(database: PGlite, name: string): Promise<TestUser> {
+  const user = await createAccount(database, name);
+  await setAccountPlan(database, user, "free");
+  return user;
+}
 let staff: TestUser;
 
 async function grantAdmin(user: TestUser) {
@@ -47,12 +57,32 @@ async function customer(name: string): Promise<{ owner: TestUser; ws: string }> 
   return { owner, ws: await createWorkspace(db, owner, `${name} Co`) };
 }
 
-const ALL = ["docs", "whiteboard", "kanban", "chat", "mindmap", "code", "playlist", "shopping"];
+const ALL = ["docs", "whiteboard", "kanban", "chat", "mindmap", "code", "playlist", "shopping", "calendar", "polls", "sheets"];
 
 beforeAll(async () => {
   db = await createTestDb();
   staff = await createUser(db, "Staff");
   await grantAdmin(staff);
+});
+
+describe("automatic trial", () => {
+  it("starts every new account on a 14-day Team trial with every tool, then falls back to Free", async () => {
+    const newcomer = await createAccount(db, "SignUp");
+    const sub = await account(newcomer);
+    expect(sub).toMatchObject({ plan_id: "team", status: "trialing" });
+    const days = (new Date(sub!.trial_ends_at!).getTime() - Date.now()) / 86_400_000;
+    expect(days).toBeGreaterThan(13.9);
+    expect(days).toBeLessThanOrEqual(14);
+
+    const ws = await createWorkspace(db, newcomer, "Trial Co");
+    expect(await enabledModules(ws)).toEqual(ALL);
+    await createWorkspace(db, newcomer, "Second"); // Team allows 3
+
+    // When the trial lapses, Free limits apply; nothing is removed.
+    await db.query(`update account_subscriptions set trial_ends_at = now() - interval '1 minute' where user_id = $1`, [newcomer.id]);
+    expect(await expectError(createWorkspace(db, newcomer, "Third"))).toMatch(/Free plan allows up to 1 workspace/);
+    expect(await count(db, `select 1 from workspaces where owner_id = $1`, [newcomer.id])).toBe(2);
+  });
 });
 
 describe("account plans", () => {
@@ -276,7 +306,7 @@ describe("upgrades bring tools back", () => {
     // The owner deliberately turns off a Free tool.
     await asUser(db, owner, (tx) => tx.query(`update workspace_modules set enabled = false where workspace_id = $1 and module_type = 'chat'`, [ws]));
     await asUser(db, staff, (tx) => tx.query(`select admin_set_plan($1, 'business')`, [owner.id]));
-    expect(await enabledModules(ws)).toEqual(["docs", "whiteboard", "kanban", "mindmap", "code", "playlist", "shopping"]);
+    expect(await enabledModules(ws)).toEqual(["docs", "whiteboard", "kanban", "mindmap", "code", "playlist", "shopping", "calendar", "polls", "sheets"]);
   });
 
   it("a trial does the same", async () => {
@@ -478,11 +508,11 @@ describe("upgrading from per-workspace plans (20261023000009)", () => {
 
     // Before: one owner with a Free workspace and a Business one (created on
     // Free, so its extra tools were switched off), and a suspended owner.
-    const owner = await createUser(old, "Legacy");
+    const owner = await createAccount(old, "Legacy");
     const free = await createWorkspace(old, owner, "Legacy Free");
     const biz = await createWorkspace(old, owner, "Legacy Biz");
     await old.query(`update workspace_subscriptions set plan_id = 'business', notes = 'VIP' where workspace_id = $1`, [biz]);
-    const banned = await createUser(old, "Banned");
+    const banned = await createAccount(old, "Banned");
     const bannedWs = await createWorkspace(old, banned, "Banned Co");
     await old.query(`update workspace_subscriptions set status = 'suspended' where workspace_id = $1`, [bannedWs]);
 
@@ -499,7 +529,7 @@ describe("upgrading from per-workspace plans (20261023000009)", () => {
     // Both of the owner's workspaces now run on Business with every tool on.
     for (const ws of [free, biz]) {
       const r = await old.query<{ n: number }>(`select count(*)::int as n from workspace_modules where workspace_id = $1 and enabled`, [ws]);
-      expect(r.rows[0]!.n).toBe(8);
+      expect(r.rows[0]!.n).toBe(11);
     }
     expect((await old.query(`select to_regclass('public.workspace_subscriptions') as t`)).rows).toEqual([{ t: null }]);
     await old.close();

@@ -1,5 +1,7 @@
 import {
+  CalendarDays,
   CodeXml,
+  FileSpreadsheet,
   FileText,
   KanbanSquare,
   MessagesSquare,
@@ -7,6 +9,7 @@ import {
   Network,
   PenTool,
   ListTodo,
+  Vote,
   type LucideIcon,
 } from "lucide-react";
 import type { ModuleType } from "@collabverse/shared";
@@ -21,6 +24,9 @@ export const MODULE_ICONS: Record<ModuleType, LucideIcon> = {
   code: CodeXml,
   playlist: Music,
   shopping: ListTodo,
+  calendar: CalendarDays,
+  polls: Vote,
+  sheets: FileSpreadsheet,
 };
 
 export const MODULE_COLOR: Record<ModuleType, string> = {
@@ -32,6 +38,9 @@ export const MODULE_COLOR: Record<ModuleType, string> = {
   code: "var(--mod-code)",
   playlist: "var(--mod-playlist)",
   shopping: "var(--mod-shopping)",
+  calendar: "var(--mod-calendar)",
+  polls: "var(--mod-polls)",
+  sheets: "var(--mod-sheets)",
 };
 
 export function ModuleIcon({ type, className, tile = false }: { type: ModuleType; className?: string; tile?: boolean }) {

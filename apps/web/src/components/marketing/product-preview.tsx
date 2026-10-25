@@ -9,18 +9,23 @@ const COLUMNS: { name: string; cards: Card[] }[] = [
     cards: [
       { title: "Draft Q3 client newsletter", tag: "docs", who: "AR", color: "var(--c-sky)" },
       { title: "Office move: to-do list", tag: "shopping", who: "JM", color: "var(--c-amber)" },
+      { title: "Vote: team lunch venue", tag: "polls", who: "SK", color: "var(--c-rose)" },
     ],
   },
   {
     name: "In progress",
     cards: [
       { title: "Onboarding flow sketch", tag: "whiteboard", who: "SK", color: "var(--c-rose)" },
+      { title: "Q3 budget, by department", tag: "sheets", who: "DL", color: "var(--c-teal)" },
       { title: "Fix invoice export script", tag: "code", who: "DL", color: "var(--c-teal)" },
     ],
   },
   {
     name: "Done",
-    cards: [{ title: "Brainstorm: spring campaign", tag: "mindmap", who: "AR", color: "var(--c-sky)" }],
+    cards: [
+      { title: "Brainstorm: spring campaign", tag: "mindmap", who: "AR", color: "var(--c-sky)" },
+      { title: "Client review booked for Thursday", tag: "calendar", who: "JM", color: "var(--c-amber)" },
+    ],
   },
 ];
 
@@ -45,8 +50,9 @@ export function ProductPreview() {
   return (
     <figure className="relative">
       <figcaption className="sr-only">
-        Illustration of a CollabVerse workspace: a sidebar listing the eight tools, a Kanban board with three
-        columns, and two teammates&apos; cursors moving on the board at the same time.
+        Illustration of a CollabVerse workspace: a sidebar listing all {MODULE_TYPES.length} tools, a Kanban
+        board whose cards link to docs, sheets, polls, calendar events and more, and two teammates&apos; cursors
+        moving on the board at the same time.
       </figcaption>
       <div aria-hidden className="overflow-hidden rounded-xl border border-border bg-surface shadow-lg select-none">
         {/* Title bar */}

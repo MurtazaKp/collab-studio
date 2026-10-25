@@ -19,12 +19,15 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { ActivityFeed, type ActivityEvent } from "./activity-feed";
 import {
+  CalendarWidget,
   ChatWidget,
   CodeWidget,
   DocsWidget,
   KanbanWidget,
   MindmapWidget,
   PlaylistWidget,
+  PollsWidget,
+  SheetsWidget,
   ShoppingWidget,
   WhiteboardWidget,
   type WidgetProps,
@@ -39,6 +42,9 @@ const WIDGETS: Record<ModuleType, (p: WidgetProps) => React.ReactNode> = {
   code: CodeWidget,
   playlist: PlaylistWidget,
   shopping: ShoppingWidget,
+  calendar: CalendarWidget,
+  polls: PollsWidget,
+  sheets: SheetsWidget,
 };
 
 const SPAN: Record<DashboardSize, string> = {

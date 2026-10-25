@@ -11,6 +11,9 @@ export const MODULE_TYPES = [
   "code",
   "playlist",
   "shopping",
+  "calendar",
+  "polls",
+  "sheets",
 ] as const;
 
 export type ModuleType = (typeof MODULE_TYPES)[number];
@@ -101,6 +104,30 @@ export const MODULES: Record<ModuleType, ModuleDefinition> = {
     itemNoun: "list",
     description: "Shared to-do lists with assignees, categories and check-offs.",
     segment: "shopping",
+    sync: "relational",
+  },
+  calendar: {
+    type: "calendar",
+    label: "Calendar",
+    itemNoun: "calendar",
+    description: "Shared calendars for meetings, deadlines and events, with attendees.",
+    segment: "calendar",
+    sync: "relational",
+  },
+  polls: {
+    type: "polls",
+    label: "Polls",
+    itemNoun: "poll",
+    description: "Quick team decisions with live results.",
+    segment: "polls",
+    sync: "relational",
+  },
+  sheets: {
+    type: "sheets",
+    label: "Sheets",
+    itemNoun: "sheet",
+    description: "Spreadsheets edited together, cell by cell, with simple formulas.",
+    segment: "sheets",
     sync: "relational",
   },
 };

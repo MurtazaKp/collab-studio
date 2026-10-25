@@ -56,7 +56,7 @@ export type Database = {
           workspace_id: string;
           actor_id: string | null;
           verb: "created" | "moved" | "completed" | "added" | "checked" | "joined" | "left" | "renamed";
-          entity_type: "document" | "whiteboard" | "mindmap" | "code_project" | "board" | "task" | "channel" | "playlist" | "playlist_item" | "shopping_list" | "shopping_item" | "member";
+          entity_type: "document" | "whiteboard" | "mindmap" | "code_project" | "board" | "task" | "channel" | "playlist" | "playlist_item" | "shopping_list" | "shopping_item" | "member" | "calendar" | "calendar_event" | "poll" | "sheet";
           entity_id: string | null;
           title: string;
           detail: string;
@@ -67,7 +67,7 @@ export type Database = {
           workspace_id: string;
           actor_id?: string | null;
           verb: "created" | "moved" | "completed" | "added" | "checked" | "joined" | "left" | "renamed";
-          entity_type: "document" | "whiteboard" | "mindmap" | "code_project" | "board" | "task" | "channel" | "playlist" | "playlist_item" | "shopping_list" | "shopping_item" | "member";
+          entity_type: "document" | "whiteboard" | "mindmap" | "code_project" | "board" | "task" | "channel" | "playlist" | "playlist_item" | "shopping_list" | "shopping_item" | "member" | "calendar" | "calendar_event" | "poll" | "sheet";
           entity_id?: string | null;
           title?: string;
           detail?: string;
@@ -78,7 +78,7 @@ export type Database = {
           workspace_id?: string;
           actor_id?: string | null;
           verb?: "created" | "moved" | "completed" | "added" | "checked" | "joined" | "left" | "renamed";
-          entity_type?: "document" | "whiteboard" | "mindmap" | "code_project" | "board" | "task" | "channel" | "playlist" | "playlist_item" | "shopping_list" | "shopping_item" | "member";
+          entity_type?: "document" | "whiteboard" | "mindmap" | "code_project" | "board" | "task" | "channel" | "playlist" | "playlist_item" | "shopping_list" | "shopping_item" | "member" | "calendar" | "calendar_event" | "poll" | "sheet";
           entity_id?: string | null;
           title?: string;
           detail?: string;
@@ -235,6 +235,93 @@ export type Database = {
         Relationships: [
           { foreignKeyName: "boards_created_by_fkey"; columns: ["created_by"]; isOneToOne: false; referencedRelation: "profiles"; referencedColumns: ["id"] },
           { foreignKeyName: "boards_workspace_id_fkey"; columns: ["workspace_id"]; isOneToOne: false; referencedRelation: "workspaces"; referencedColumns: ["id"] },
+        ];
+      };
+      calendar_events: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          calendar_id: string;
+          title: string;
+          description: string;
+          location: string;
+          starts_at: string;
+          ends_at: string;
+          all_day: boolean;
+          color: "iris" | "teal" | "amber" | "rose" | "sky" | "lime" | "violet" | "slate";
+          attendee_ids: string[];
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          calendar_id: string;
+          title: string;
+          description?: string;
+          location?: string;
+          starts_at: string;
+          ends_at: string;
+          all_day?: boolean;
+          color?: "iris" | "teal" | "amber" | "rose" | "sky" | "lime" | "violet" | "slate";
+          attendee_ids?: string[];
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          calendar_id?: string;
+          title?: string;
+          description?: string;
+          location?: string;
+          starts_at?: string;
+          ends_at?: string;
+          all_day?: boolean;
+          color?: "iris" | "teal" | "amber" | "rose" | "sky" | "lime" | "violet" | "slate";
+          attendee_ids?: string[];
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          { foreignKeyName: "calendar_events_calendar_id_workspace_id_fkey"; columns: ["calendar_id","workspace_id"]; isOneToOne: false; referencedRelation: "calendars"; referencedColumns: ["id","workspace_id"] },
+          { foreignKeyName: "calendar_events_created_by_fkey"; columns: ["created_by"]; isOneToOne: false; referencedRelation: "profiles"; referencedColumns: ["id"] },
+        ];
+      };
+      calendars: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          title: string;
+          description: string;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          title: string;
+          description?: string;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          title?: string;
+          description?: string;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          { foreignKeyName: "calendars_created_by_fkey"; columns: ["created_by"]; isOneToOne: false; referencedRelation: "profiles"; referencedColumns: ["id"] },
+          { foreignKeyName: "calendars_workspace_id_fkey"; columns: ["workspace_id"]; isOneToOne: false; referencedRelation: "workspaces"; referencedColumns: ["id"] },
         ];
       };
       channel_reads: {
@@ -690,7 +777,7 @@ export type Database = {
           user_id: string;
           workspace_id: string | null;
           actor_id: string | null;
-          kind: "task_assigned" | "task_comment" | "thread_reply" | "item_assigned" | "member_joined" | "role_changed" | "invitation";
+          kind: "task_assigned" | "task_comment" | "thread_reply" | "item_assigned" | "member_joined" | "role_changed" | "invitation" | "event_invite";
           title: string;
           body: string;
           link: string;
@@ -702,7 +789,7 @@ export type Database = {
           user_id: string;
           workspace_id?: string | null;
           actor_id?: string | null;
-          kind: "task_assigned" | "task_comment" | "thread_reply" | "item_assigned" | "member_joined" | "role_changed" | "invitation";
+          kind: "task_assigned" | "task_comment" | "thread_reply" | "item_assigned" | "member_joined" | "role_changed" | "invitation" | "event_invite";
           title: string;
           body?: string;
           link?: string;
@@ -714,7 +801,7 @@ export type Database = {
           user_id?: string;
           workspace_id?: string | null;
           actor_id?: string | null;
-          kind?: "task_assigned" | "task_comment" | "thread_reply" | "item_assigned" | "member_joined" | "role_changed" | "invitation";
+          kind?: "task_assigned" | "task_comment" | "thread_reply" | "item_assigned" | "member_joined" | "role_changed" | "invitation" | "event_invite";
           title?: string;
           body?: string;
           link?: string;
@@ -877,6 +964,117 @@ export type Database = {
           { foreignKeyName: "playlists_workspace_id_fkey"; columns: ["workspace_id"]; isOneToOne: false; referencedRelation: "workspaces"; referencedColumns: ["id"] },
         ];
       };
+      poll_options: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          poll_id: string;
+          label: string;
+          position: string;
+          vote_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          poll_id: string;
+          label: string;
+          position: string;
+          vote_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          poll_id?: string;
+          label?: string;
+          position?: string;
+          vote_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          { foreignKeyName: "poll_options_poll_id_workspace_id_fkey"; columns: ["poll_id","workspace_id"]; isOneToOne: false; referencedRelation: "polls"; referencedColumns: ["id","workspace_id"] },
+        ];
+      };
+      poll_votes: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          poll_id: string;
+          option_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          poll_id: string;
+          option_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          poll_id?: string;
+          option_id?: string;
+          user_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          { foreignKeyName: "poll_votes_option_id_poll_id_fkey"; columns: ["option_id","poll_id"]; isOneToOne: false; referencedRelation: "poll_options"; referencedColumns: ["id","poll_id"] },
+          { foreignKeyName: "poll_votes_poll_id_workspace_id_fkey"; columns: ["poll_id","workspace_id"]; isOneToOne: false; referencedRelation: "polls"; referencedColumns: ["id","workspace_id"] },
+          { foreignKeyName: "poll_votes_user_id_fkey"; columns: ["user_id"]; isOneToOne: false; referencedRelation: "profiles"; referencedColumns: ["id"] },
+        ];
+      };
+      polls: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          title: string;
+          description: string;
+          multiple: boolean;
+          anonymous: boolean;
+          closes_at: string | null;
+          closed_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          title: string;
+          description?: string;
+          multiple?: boolean;
+          anonymous?: boolean;
+          closes_at?: string | null;
+          closed_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          title?: string;
+          description?: string;
+          multiple?: boolean;
+          anonymous?: boolean;
+          closes_at?: string | null;
+          closed_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          { foreignKeyName: "polls_created_by_fkey"; columns: ["created_by"]; isOneToOne: false; referencedRelation: "profiles"; referencedColumns: ["id"] },
+          { foreignKeyName: "polls_workspace_id_fkey"; columns: ["workspace_id"]; isOneToOne: false; referencedRelation: "workspaces"; referencedColumns: ["id"] },
+        ];
+      };
       profiles: {
         Row: {
           id: string;
@@ -907,6 +1105,90 @@ export type Database = {
         };
         Relationships: [
           { foreignKeyName: "profiles_last_workspace_fk"; columns: ["last_workspace_id"]; isOneToOne: false; referencedRelation: "workspaces"; referencedColumns: ["id"] },
+        ];
+      };
+      sheet_cells: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          sheet_id: string;
+          row_index: number;
+          col_index: number;
+          value: string;
+          updated_by: string | null;
+          updated_at: string;
+          format: Json;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          sheet_id: string;
+          row_index: number;
+          col_index: number;
+          value?: string;
+          updated_by?: string | null;
+          updated_at?: string;
+          format?: Json;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          sheet_id?: string;
+          row_index?: number;
+          col_index?: number;
+          value?: string;
+          updated_by?: string | null;
+          updated_at?: string;
+          format?: Json;
+        };
+        Relationships: [
+          { foreignKeyName: "sheet_cells_sheet_id_workspace_id_fkey"; columns: ["sheet_id","workspace_id"]; isOneToOne: false; referencedRelation: "sheets"; referencedColumns: ["id","workspace_id"] },
+          { foreignKeyName: "sheet_cells_updated_by_fkey"; columns: ["updated_by"]; isOneToOne: false; referencedRelation: "profiles"; referencedColumns: ["id"] },
+        ];
+      };
+      sheets: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          title: string;
+          description: string;
+          row_count: number;
+          col_count: number;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+          col_widths: Json;
+          frozen_rows: number;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          title: string;
+          description?: string;
+          row_count?: number;
+          col_count?: number;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          col_widths?: Json;
+          frozen_rows?: number;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          title?: string;
+          description?: string;
+          row_count?: number;
+          col_count?: number;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          col_widths?: Json;
+          frozen_rows?: number;
+        };
+        Relationships: [
+          { foreignKeyName: "sheets_created_by_fkey"; columns: ["created_by"]; isOneToOne: false; referencedRelation: "profiles"; referencedColumns: ["id"] },
+          { foreignKeyName: "sheets_workspace_id_fkey"; columns: ["workspace_id"]; isOneToOne: false; referencedRelation: "workspaces"; referencedColumns: ["id"] },
         ];
       };
       shopping_items: {
@@ -1131,7 +1413,7 @@ export type Database = {
         Row: {
           id: string;
           workspace_id: string;
-          module_type: "docs" | "whiteboard" | "kanban" | "chat" | "mindmap" | "code" | "playlist" | "shopping";
+          module_type: "docs" | "whiteboard" | "kanban" | "chat" | "mindmap" | "code" | "playlist" | "shopping" | "calendar" | "polls" | "sheets";
           enabled: boolean;
           position: number;
           config: Json;
@@ -1142,7 +1424,7 @@ export type Database = {
         Insert: {
           id?: string;
           workspace_id: string;
-          module_type: "docs" | "whiteboard" | "kanban" | "chat" | "mindmap" | "code" | "playlist" | "shopping";
+          module_type: "docs" | "whiteboard" | "kanban" | "chat" | "mindmap" | "code" | "playlist" | "shopping" | "calendar" | "polls" | "sheets";
           enabled?: boolean;
           position?: number;
           config?: Json;
@@ -1153,7 +1435,7 @@ export type Database = {
         Update: {
           id?: string;
           workspace_id?: string;
-          module_type?: "docs" | "whiteboard" | "kanban" | "chat" | "mindmap" | "code" | "playlist" | "shopping";
+          module_type?: "docs" | "whiteboard" | "kanban" | "chat" | "mindmap" | "code" | "playlist" | "shopping" | "calendar" | "polls" | "sheets";
           enabled?: boolean;
           position?: number;
           config?: Json;
@@ -1238,6 +1520,7 @@ export type Database = {
       require_user: { Args: Record<PropertyKey, never>; Returns: string };
       revoke_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
       shares_workspace_with: { Args: { p_user_id: string }; Returns: boolean };
+      sheet_shift: { Args: { p_sheet_id: string; p_axis: string; p_at: number; p_delta: number }; Returns: undefined };
       transfer_ownership: { Args: { p_workspace_id: string; p_new_owner: string }; Returns: undefined };
       try_uuid: { Args: { p_value: string }; Returns: string };
       update_member_role: { Args: { p_workspace_id: string; p_user_id: string; p_role: string }; Returns: undefined };

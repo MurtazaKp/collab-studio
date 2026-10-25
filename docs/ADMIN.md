@@ -80,7 +80,7 @@ Derived from `apps/web/src/components/marketing/plans.ts` and the pricing page.
 | People in each workspace | 3 | 15 | 50 | unlimited |
 | Items per tool, per workspace | 25 | unlimited | unlimited | unlimited |
 | File storage per workspace | 100 MB | 10 GB | 50 GB | unlimited |
-| Tools | Docs, Kanban, Chat, TODO List | all 8 | all 8 | all 8 |
+| Tools | Docs, Kanban, Chat, TODO List | all 11 | all 11 | all 11 |
 
 - **Custom** is for organisations with many teams, sites or clients. Set its
   monthly price on the customer page (it counts as $0 in MRR until set). The
@@ -90,9 +90,11 @@ Derived from `apps/web/src/components/marketing/plans.ts` and the pricing page.
   Whiteboard, Mindmap, Code and Playlist need a paid plan.
 - **Pending invitations** don't count toward the member limit; the check runs when
   an invitation is created and again when it is accepted.
-- **Trials.** The marketing trial is a 14-day Team trial. New accounts start on
-  **Free / active**; admins start trials from the console. When a trial ends the
-  account falls back to Free limits (it is not locked).
+- **Trials.** Every new account starts on a **14-day Team trial** automatically
+  (migration `20261024000014`), with all 11 tools. Admins can extend it or start
+  another from the console. When a trial ends the account falls back to Free
+  limits (it is not locked, and nothing is deleted). Accounts created before
+  that migration keep their plan.
 - **Members of someone else's workspace** use that workspace owner's plan, not
   their own. Joining a workspace never counts toward your own workspace limit.
 

@@ -24,6 +24,10 @@ const ENTITY: Record<ActivityEvent["entity_type"], { noun: string; segment?: str
   playlist_item: { noun: "track" },
   shopping_list: { noun: "to-do list", segment: MODULES.shopping.segment },
   shopping_item: { noun: "task" },
+  calendar: { noun: "calendar", segment: MODULES.calendar.segment },
+  calendar_event: { noun: "event" },
+  poll: { noun: "poll", segment: MODULES.polls.segment },
+  sheet: { noun: "sheet", segment: MODULES.sheets.segment },
   member: { noun: "member" },
 };
 

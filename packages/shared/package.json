@@ -10,7 +10,8 @@
     "./collab-token": "./src/collab-token.ts",
     "./mindmap": "./src/mindmap.ts",
     "./whiteboard": "./src/whiteboard.ts",
-    "./code": "./src/code.ts"
+    "./code": "./src/code.ts",
+    "./sheet": "./src/sheet.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit",

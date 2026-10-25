@@ -20,7 +20,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, horizontalListSortingStrategy, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CalendarDays, GripVertical, MessageSquare, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, GripVertical, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { positionAtEnd, positionForIndex, sortByPosition, type TaskPriority } from "@collabverse/shared";
 import { useWorkspace } from "@/lib/workspace-context";
 import { useLiveRows } from "@/lib/realtime/live-rows";
@@ -191,11 +191,14 @@ export function KanbanBoard({ board, initialColumns, initialTasks }: { board: It
     }
   }, [openTaskId, tasks.status, taskById, search, router, pathname]);
 
+  // Opening a card only changes ?task= in the address. The browser history API
+  // updates useSearchParams instantly, without the server round trip a
+  // router navigation would make, so the card opens the moment it's clicked.
   const openTask = (id: string | null) => {
     const params = new URLSearchParams(search.toString());
     if (id) params.set("task", id);
     else params.delete("task");
-    router.replace(`${pathname}${params.size ? `?${params}` : ""}`, { scroll: false });
+    window.history.replaceState(null, "", `${pathname}${params.size ? `?${params}` : ""}`);
   };
 
   const activeTask = activeId?.startsWith("task:") ? taskById.get(activeId.slice(5)) : null;
@@ -469,7 +472,7 @@ function SortableTask({ task, editable, onOpen }: { task: Task; editable: boolea
     <div
       ref={s.setNodeRef}
       style={{ transform: CSS.Translate.toString(s.transform), transition: s.transition }}
-      className={cn(s.isDragging && "opacity-30")}
+      className={cn("rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent", s.isDragging && "opacity-30")}
       {...s.attributes}
       {...s.listeners}
       onClick={onOpen}
@@ -498,35 +501,45 @@ export function TaskCardView({ task, overlay = false }: { task: Task; overlay?: 
   return (
     <article
       className={cn(
-        "cursor-pointer rounded-lg border border-border bg-surface p-3 text-left shadow-sm transition-[border-color,box-shadow] hover:border-border-strong",
+        "group/card cursor-pointer rounded-xl border border-border bg-surface px-3 py-2.5 text-left shadow-[0_1px_2px_rgb(0_0_0/0.06)] transition-[border-color,box-shadow,transform] duration-150 hover:-translate-y-px hover:border-border-strong hover:shadow-md active:translate-y-0 active:scale-[0.99] active:border-accent motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100",
         overlay && "rotate-1 cursor-grabbing shadow-lg",
       )}
     >
       {task.labels.length ? (
-        <div className="mb-2 flex flex-wrap gap-1">
+        <div className="mb-1.5 flex flex-wrap gap-1">
           {task.labels.map((l) => (
             <Badge key={l}>{l}</Badge>
           ))}
         </div>
       ) : null}
-      <p className="text-[13.5px] leading-snug font-medium text-text">{task.title}</p>
-      {task.priority !== "none" || task.due_date || assignee || task.description ? (
-        <div className="mt-2.5 flex items-center gap-2 text-[12px] text-muted">
+      <p className="text-[14px] leading-snug font-medium wrap-break-word text-text">{task.title}</p>
+      {task.description ? <p className="mt-1 line-clamp-2 text-[12.5px] leading-snug wrap-break-word text-muted">{task.description}</p> : null}
+      {task.priority !== "none" || task.due_date || assignee ? (
+        <div className="mt-2 flex items-center gap-1.5 text-[11.5px]">
           {task.priority !== "none" ? (
-            <span className="inline-flex items-center gap-1">
-              <span className="size-2 rounded-full" style={{ background: pr.dot }} />
+            <span className="inline-flex h-5 items-center gap-1 rounded-md bg-surface-2 px-1.5 font-medium text-text-2">
+              <span aria-hidden className="size-1.5 rounded-full" style={{ background: pr.dot }} />
               {pr.label}
             </span>
           ) : null}
           {task.due_date ? (
-            <span className={cn("inline-flex items-center gap-1", overdue && "text-danger")}>
-              <CalendarDays className="size-3.5" />
+            <span
+              className={cn(
+                "inline-flex h-5 items-center gap-1 rounded-md px-1.5 font-medium tabular-nums",
+                overdue ? "bg-danger-soft text-danger" : "bg-surface-2 text-text-2",
+              )}
+            >
+              <CalendarDays aria-hidden className="size-3" />
               {formatDate(task.due_date)}
+              {overdue ? <span className="sr-only"> (overdue)</span> : null}
             </span>
           ) : null}
-          {task.description ? <MessageSquare className="size-3.5" role="img" aria-label="Has description" /> : null}
           <span className="flex-1" />
-          {assignee ? <Avatar name={assignee.name} color={assignee.color} size={20} /> : null}
+          {assignee ? (
+            <span title={`Assigned to ${assignee.name}`}>
+              <Avatar name={assignee.name} color={assignee.color} size={22} />
+            </span>
+          ) : null}
         </div>
       ) : null}
     </article>

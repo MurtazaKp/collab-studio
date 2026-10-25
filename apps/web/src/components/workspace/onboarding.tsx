@@ -239,10 +239,14 @@ export function Onboarding({
   invitations: PendingInvite[];
 }) {
   const router = useRouter();
-  const [step, setStep] = useState<"name" | "workspace">(hasWorkspaces ? "workspace" : "name");
+  // Invited people who already gave their name at sign-up go straight to the invitation.
+  const invited = invitations.length > 0;
+  const [step, setStep] = useState<"name" | "workspace">(hasWorkspaces || (invited && initialName.trim()) ? "workspace" : "name");
   const [name, setName] = useState(initialName);
   const [pending, start] = useTransition();
   const [joining, setJoining] = useState<string | null>(null);
+  // With an invitation waiting, creating a workspace is the secondary path.
+  const [creating, setCreating] = useState(!invited);
 
   if (step === "name") {
     return (
@@ -272,55 +276,70 @@ export function Onboarding({
     );
   }
 
+  const accept = async (id: string) => {
+    setJoining(id);
+    const res = await acceptInvitationByIdAction(id);
+    if (!res.ok) {
+      setJoining(null);
+      toastError(res.error);
+      return;
+    }
+    router.push(`/w/${res.data.workspaceId}`);
+  };
+
+  if (invited && !creating) {
+    const only = invitations.length === 1 ? invitations[0]! : null;
+    return (
+      <div className="animate-pop-in">
+        <p className="text-[13px] font-medium text-accent">You&apos;ve been invited</p>
+        <h1 className="mt-2 font-display text-[40px] leading-tight text-text">{only ? `Join ${only.workspace_name}` : "Join your team"}</h1>
+        <p className="mt-2 text-[14.5px] text-text-2">
+          {only
+            ? `${only.inviter_name} invited you as ${isRole(only.role) ? ROLE_LABELS[only.role] : only.role}. Accept to start working together.`
+            : "These workspaces are waiting for you. Accept the ones you want to join."}
+        </p>
+
+        <ul className="mt-8 flex flex-col gap-3">
+          {invitations.map((inv) => (
+            <li key={inv.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm">
+              <span
+                aria-hidden
+                className="flex size-11 shrink-0 items-center justify-center rounded-xl text-lg text-white"
+                style={{ background: colorVar(inv.workspace_color) }}
+              >
+                {inv.workspace_icon}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-semibold text-text">{inv.workspace_name}</p>
+                <p className="text-[12.5px] text-muted">
+                  {inv.inviter_name} invited you as {isRole(inv.role) ? ROLE_LABELS[inv.role] : inv.role}
+                </p>
+              </div>
+              <Button variant="primary" size={only ? "lg" : "md"} loading={joining === inv.id} disabled={joining !== null && joining !== inv.id} onClick={() => void accept(inv.id)}>
+                Accept invitation <ArrowRight className="size-4" />
+              </Button>
+            </li>
+          ))}
+        </ul>
+
+        <button type="button" onClick={() => setCreating(true)} className="mt-8 text-[13px] text-text-2 underline-offset-4 hover:text-text hover:underline">
+          Create my own workspace instead
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-pop-in">
-      {!hasWorkspaces ? <p className="text-[13px] font-medium text-muted">Step 2 of 2</p> : null}
-      <h1 className="mt-2 font-display text-[40px] leading-tight text-text">
-        {invitations.length ? "Join your team or start fresh" : "Create a workspace"}
-      </h1>
+      {!hasWorkspaces && !invited ? <p className="text-[13px] font-medium text-muted">Step 2 of 2</p> : null}
+      {invited ? (
+        <button type="button" onClick={() => setCreating(false)} className="mb-2 text-[13px] text-accent underline-offset-4 hover:underline">
+          ← Back to your invitation{invitations.length === 1 ? "" : "s"}
+        </button>
+      ) : null}
+      <h1 className="mt-2 font-display text-[40px] leading-tight text-text">Create a workspace</h1>
       <p className="mt-2 text-[14.5px] text-text-2">A workspace holds your modules and the people you collaborate with.</p>
-
-      {invitations.length > 0 ? (
-        <section className="mt-8">
-          <h2 className="mb-3 text-[13px] font-medium text-text-2">Waiting for you</h2>
-          <ul className="flex flex-col gap-2">
-            {invitations.map((inv) => (
-              <li key={inv.id} className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3 shadow-sm">
-                <span className="flex size-9 items-center justify-center rounded-lg text-white" style={{ background: colorVar(inv.workspace_color) }}>
-                  {inv.workspace_icon}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-medium text-text">{inv.workspace_name}</p>
-                  <p className="text-[12.5px] text-muted">
-                    {inv.inviter_name} invited you as {isRole(inv.role) ? ROLE_LABELS[inv.role] : inv.role}
-                  </p>
-                </div>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  loading={joining === inv.id}
-                  onClick={async () => {
-                    setJoining(inv.id);
-                    const res = await acceptInvitationByIdAction(inv.id);
-                    setJoining(null);
-                    if (!res.ok) toastError(res.error);
-                    else router.push(`/w/${res.data.workspaceId}`);
-                  }}
-                >
-                  Join
-                </Button>
-              </li>
-            ))}
-          </ul>
-          <div className="my-8 flex items-center gap-3 text-[12px] text-muted">
-            <span className="h-px flex-1 bg-border" />
-            or create your own
-            <span className="h-px flex-1 bg-border" />
-          </div>
-        </section>
-      ) : (
-        <div className="mt-8" />
-      )}
+      <div className="mt-8" />
       <WorkspaceForm onCreated={(id) => router.push(`/w/${id}`)} />
     </div>
   );

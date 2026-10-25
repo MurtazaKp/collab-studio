@@ -6,12 +6,33 @@ import { safeNextPath } from "@/lib/env";
 const OTP_TYPES: EmailOtpType[] = ["signup", "invite", "magiclink", "recovery", "email_change", "email"];
 
 /**
+ * Where to go after confirming. Templates can pass `next` directly, or
+ * `redirect_to={{ .RedirectTo }}`: the URL the app asked Supabase for (for
+ * example /auth/confirm?next=/invite/…, so a sign-up started from an
+ * invitation ends on the invitation). Only links back to this site count.
+ */
+function nextFrom(url: URL): string {
+  const direct = url.searchParams.get("next");
+  if (direct) return safeNextPath(direct, "/w");
+  const redirectTo = url.searchParams.get("redirect_to");
+  if (redirectTo) {
+    try {
+      const target = new URL(redirectTo);
+      if (target.origin === url.origin) return safeNextPath(target.searchParams.get("next"), "/w");
+    } catch {
+      // Not a URL; fall through.
+    }
+  }
+  return "/w";
+}
+
+/**
  * Email links (sign-up confirmation, password recovery) land here. Supports
  * both the token-hash template and the PKCE `code` redirect.
  */
 export async function GET(request: NextRequest) {
   const url = request.nextUrl;
-  const next = safeNextPath(url.searchParams.get("next"), "/w");
+  const next = nextFrom(url);
   const tokenHash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type") as EmailOtpType | null;
   const code = url.searchParams.get("code");

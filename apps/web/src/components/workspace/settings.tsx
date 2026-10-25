@@ -282,9 +282,13 @@ export function MembersSettings({ invitations }: { invitations: InvitationRow[] 
   const [email, setEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<string>("member");
   const [link, setLink] = useState<string | null>(null);
+  const [sent, setSent] = useState<{ to: string; emailed: boolean; note: string | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [confirm, setConfirm] = useState<{ kind: "remove" | "transfer"; userId: string; name: string } | null>(null);
+  const [revoking, setRevoking] = useState<Set<string>>(new Set());
+  const [revoked, setRevoked] = useState<Set<string>>(new Set());
+  const pendingInvites = invitations.filter((inv) => !revoked.has(inv.id));
 
   return (
     <>
@@ -299,6 +303,8 @@ export function MembersSettings({ invitations }: { invitations: InvitationRow[] 
               e.preventDefault();
               setError(null);
               setLink(null);
+              setSent(null);
+              const to = email;
               start(async () => {
                 const res = await inviteMemberAction({ workspaceId: workspace.id, email, role: inviteRole });
                 if (!res.ok) {
@@ -306,6 +312,8 @@ export function MembersSettings({ invitations }: { invitations: InvitationRow[] 
                   else setError(res.error);
                 } else {
                   setLink(res.data.link);
+                  setSent({ to, emailed: res.data.emailed, note: res.data.emailNote });
+                  if (res.data.emailed) toast.success(`Invitation emailed to ${to}`);
                   setEmail("");
                   router.refresh();
                 }
@@ -327,15 +335,23 @@ export function MembersSettings({ invitations }: { invitations: InvitationRow[] 
               )}
             </Field>
             <Button type="submit" variant="primary" loading={pending}>
-              Create invite
+              Send invite
             </Button>
           </form>
           {error ? <Notice tone="danger" className="mt-3">{error}</Notice> : null}
           {link ? (
             <div className="mt-3 rounded-lg border border-border bg-surface-2 p-3">
-              <p className="text-[12.5px] text-text-2">
-                Share this link with them. It&apos;s shown only once — anyone signed in with the invited email can use it.
-              </p>
+              {sent?.emailed ? (
+                <p className="text-[12.5px] text-text-2">
+                  <span className="font-medium text-success">Invitation emailed to {sent.to}.</span> If it doesn&apos;t arrive (check spam), you can
+                  share this link instead. It&apos;s shown only once and works only for that email address.
+                </p>
+              ) : (
+                <p className="text-[12.5px] text-text-2">
+                  {sent?.note ? <span className="font-medium text-text">{sent.note} </span> : null}
+                  It&apos;s shown only once, and anyone signed in with the invited email can use it.
+                </p>
+              )}
               <div className="mt-2 flex gap-2">
                 <Input readOnly value={link} aria-label="Invitation link" onFocus={(e) => e.currentTarget.select()} className="font-mono text-[12px]" />
                 <Button
@@ -427,12 +443,12 @@ export function MembersSettings({ invitations }: { invitations: InvitationRow[] 
       </Card>
 
       {canManage ? (
-        <Card title={`Pending invitations · ${invitations.length}`}>
-          {invitations.length === 0 ? (
+        <Card title={`Pending invitations · ${pendingInvites.length}`}>
+          {pendingInvites.length === 0 ? (
             <p className="text-[13px] text-muted">No pending invitations.</p>
           ) : (
             <ul className="divide-y divide-border">
-              {invitations.map((inv) => (
+              {pendingInvites.map((inv) => (
                 <li key={inv.id} className="flex items-center gap-3 py-2.5">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13.5px] text-text">{inv.email}</p>
@@ -443,10 +459,25 @@ export function MembersSettings({ invitations }: { invitations: InvitationRow[] 
                   <Button
                     size="sm"
                     variant="ghost"
+                    className="text-danger hover:bg-danger-soft"
+                    loading={revoking.has(inv.id)}
+                    aria-label={`Revoke invitation for ${inv.email}`}
                     onClick={async () => {
+                      // Hide it straight away; bring it back if the server says no.
+                      setRevoking((s) => new Set(s).add(inv.id));
                       const res = await revokeInvitationAction(workspace.id, inv.id);
-                      if (!res.ok) toastError(res.error);
-                      else router.refresh();
+                      setRevoking((s) => {
+                        const next = new Set(s);
+                        next.delete(inv.id);
+                        return next;
+                      });
+                      if (!res.ok) {
+                        toastError(res.error);
+                        return;
+                      }
+                      setRevoked((s) => new Set(s).add(inv.id));
+                      toast.success(`Invitation for ${inv.email} revoked`);
+                      router.refresh();
                     }}
                   >
                     Revoke

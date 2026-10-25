@@ -48,7 +48,7 @@ test("2. invitations are bound to the intended recipient", async () => {
   const p = alice.page;
   await p.goto(`/w/${ws}/settings/members`);
   await p.getByLabel("Email").fill(b.email);
-  await p.getByRole("button", { name: "Create invite" }).click();
+  await p.getByRole("button", { name: "Send invite" }).click();
   const link = await p.getByLabel("Invitation link").inputValue();
   expect(link).toMatch(/\/invite\/[0-9a-f]{64}$/);
   const path = new URL(link).pathname;
@@ -69,7 +69,7 @@ test("2. invitations are bound to the intended recipient", async () => {
   // Carol joins as a viewer for the permission tests.
   await p.getByLabel("Email").fill(c.email);
   await p.getByLabel("Role").selectOption("viewer");
-  await p.getByRole("button", { name: "Create invite" }).click();
+  await p.getByRole("button", { name: "Send invite" }).click();
   const carolLink = new URL(await p.getByLabel("Invitation link").inputValue()).pathname;
   await carol.page.goto(carolLink);
   await carol.page.getByRole("button", { name: "Accept and join" }).click();

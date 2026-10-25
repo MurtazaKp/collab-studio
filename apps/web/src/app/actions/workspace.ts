@@ -14,6 +14,8 @@ import {
 } from "@collabverse/shared";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/site-url";
+import { mailerConfigured, sendEmail } from "@/lib/mailer";
+import { invitationEmail } from "@/lib/emails/invitation";
 import { errorMessage } from "@/lib/utils";
 import type { Json } from "@/lib/supabase/database.types";
 import { DASHBOARD_SIZES } from "@/lib/dashboard";
@@ -158,10 +160,14 @@ export async function saveDashboardLayoutAction(workspaceId: string, items: unkn
 // Members and invitations
 // ---------------------------------------------------------------------------
 
-export async function inviteMemberAction(input: { workspaceId: string; email: string; role: string }): Promise<ActionResult<{ link: string; expiresAt: string }>> {
+export async function inviteMemberAction(input: {
+  workspaceId: string;
+  email: string;
+  role: string;
+}): Promise<ActionResult<{ link: string; expiresAt: string; emailed: boolean; emailNote: string | null }>> {
   const parsed = inviteInputSchema.safeParse(input);
   if (!parsed.success) return fail(parsed.error.issues[0]?.message);
-  const { supabase } = await client();
+  const { supabase, user } = await client();
   const { data, error } = await supabase.rpc("create_invitation", {
     p_workspace_id: parsed.data.workspaceId,
     p_email: parsed.data.email,
@@ -170,7 +176,30 @@ export async function inviteMemberAction(input: { workspaceId: string; email: st
   const row = data?.[0];
   if (error || !row) return fail(error, "Couldn't create the invitation.");
   revalidatePath(`/w/${parsed.data.workspaceId}/settings/members`);
-  return ok({ link: `${await siteUrl()}/invite/${row.token}`, expiresAt: row.expires_at });
+  const link = `${await siteUrl()}/invite/${row.token}`;
+
+  // Email it when SMTP is set up; the link is shown either way as a fallback.
+  if (!mailerConfigured()) {
+    return ok({ link, expiresAt: row.expires_at, emailed: false, emailNote: "Email isn't set up yet, so share the link yourself." });
+  }
+  try {
+    const [{ data: ws }, { data: me }] = await Promise.all([
+      supabase.from("workspaces").select("name").eq("id", parsed.data.workspaceId).maybeSingle(),
+      supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
+    ]);
+    const message = invitationEmail({
+      inviter: me?.display_name || user.email || "",
+      workspace: ws?.name ?? "",
+      role: parsed.data.role,
+      link,
+      expiresAt: row.expires_at,
+    });
+    await sendEmail({ to: parsed.data.email, ...message });
+    return ok({ link, expiresAt: row.expires_at, emailed: true, emailNote: null });
+  } catch (err) {
+    console.error("invitation email failed", { workspaceId: parsed.data.workspaceId, message: err instanceof Error ? err.message : String(err) });
+    return ok({ link, expiresAt: row.expires_at, emailed: false, emailNote: "The email couldn't be sent, so share the link yourself." });
+  }
 }
 
 export async function revokeInvitationAction(workspaceId: string, invitationId: string): Promise<ActionResult> {
